@@ -2,7 +2,6 @@ import logging
 import os
 
 import fixtures
-from six.moves import mock
 import testtools
 
 LOG = logging.getLogger(__name__)

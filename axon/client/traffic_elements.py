@@ -1,0 +1,166 @@
+#!/bin/env/python
+'''
+This module represents the elements of Traffic inside the Traffic Controller.
+All the definitions of traffic node and elements must be specified here. This
+acts as the single point of control for putting constraints around the things
+like type of traffic protocols to support, range of ports allowed, type of src
+/dest IP representations to expect. It also helps in avoiding the cyclic
+dependency.
+'''
+import ipaddr
+import json
+
+
+class Error(Exception):
+    pass
+
+
+class InvalidRangeError(Error):
+    """
+    Exception raised when IP address range is incorrect.
+    """
+    pass
+
+
+class InvalidRuleError(Error):
+    """
+    Exception raised when Traffic rule is invalid.
+    """
+    pass
+
+
+class InvalidPortError(Error):
+    """
+    Exception for Invalid Port number. Valid port numers are in the range of
+    0 - 65555 only but if we want a more fine grained control, it would be the
+    place to do that (for Traffic Controller).
+    """
+    pass
+
+
+class ProtocolError(object):
+    """
+    Invalid protocol exception raised for AddOn Traffic.
+    """
+    pass
+
+
+class Endpoint(object):
+
+    def __init__(self, ep_address):
+        """
+        This class represents a valid recognizable endpoint address.
+        Endpoint address can be one of the following
+            - IP address,
+            - IP Addres range,
+            - CIDR representation.
+        """
+        self.ep_address = ep_address
+        self.ip_list = self.expand_iprange(ep_address)
+
+    def expand_iprange(self, ep_address):
+        """
+        This method takes string representation as an input and expands it
+        into the list of IP addresses if a valid input.
+        """
+        try:
+            # TODO : Expand the ranges and CIDR presentation.
+            return [ipaddr.IPAddress(ep_address)]
+        except Exception as err:
+            raise InvalidRangeError(err)
+
+    def __repr__(self):
+        return '%r' % self.ip_list
+
+
+class Port(object):
+    PORT_START = 1
+    PORT_MAX = 65555
+
+    def __init__(self, port):
+        """
+        This class represents 'Port' withing Traffic Controller system.
+        """
+        try:
+            assert(port > self.PORT_START and port < self.PORT_MAX)
+            self._port = int(port)
+        except Exception as err:
+            raise InvalidPortError(err)
+
+    @property
+    def port(self):
+        return self._port
+
+    def toJSON(self):
+        return json.dumps(self.port)
+
+    def __repr__(self):
+        return '%s' % self.port
+
+
+class Protocol(object):
+    """
+    This class enlists and controls all the protocols supported and handled
+    by the Traffic Controller system.
+    """
+    TCP = "TCP"
+    UDP = "UDP"
+
+    allowed = [TCP, UDP]
+
+
+class Action(object):
+    """
+    This class enlists and controls all the actions allowed on different
+    traffic rules.
+
+    NOTE: In future we might want to grow this list to handle more refined
+    response checking such as :
+        - Host unreachable.
+        - Port in use.
+        - Permission Denied etc.
+    """
+    DROP = 0
+    ALLOW = 1
+
+    allowed = ['DROP', 'ALLOW']
+
+
+class TrafficRule(object):
+
+    def __init__(self, src, dst, port, protocol=Protocol.TCP,
+                 action=Action.ALLOW):
+        """
+        This class captures the notion of Traffic Rule or Traffic Command for
+        the Traffic Controller system. A Traffic rule/command can specify :
+            - Traffic from 'source' to 'destination' on 'port' for 'protocol'
+              is 'allowed/denied'
+
+              -OR-
+
+            - Start listening for 'protocol' type traffic at 'port' on the
+              'destination' endpoint.
+        """
+        try:
+            # A rule must have destination endpoint , protocol and port.
+            assert(isinstance(src, Endpoint))
+            assert(isinstance(dst, Endpoint))
+            assert(isinstance(port, Port))
+
+            assert(action < len(Action.allowed))
+            assert(protocol in Protocol.allowed)
+
+            self.src_eps = src
+            self.dst_eps = dst
+            self.protocol = protocol
+            self.port = port
+            self.action = action
+
+        except Exception as err:
+            raise InvalidRuleError(err)
+
+    def __repr__(self):
+        return '%s %s traffic on port %s from %s to  %s.' % (
+               'ALLOW' if self.action else 'DROP',
+               self.protocol, self.port,
+               self.src_eps, self.dst_eps)

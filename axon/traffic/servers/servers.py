@@ -1,11 +1,40 @@
 import abc
-import multiprocessing as mp
+import os
+import signal
 import six
-import SocketServer
-from threading import Thread
+from six.moves import socketserver
+import subprocess
+
 
 from axon.common.consts import REQUEST_QUEUE_SIZE, PACKET_SIZE,\
     ALLOW_REUSE_ADDRESS
+
+
+class TCPRequestHandler(socketserver.BaseRequestHandler):
+    """
+    Handler for TCP Requests.
+    If we are using ThreadedTCPServer with the help of
+    SocketServer.ThreadingMixIn feature, every TCP request will
+    be handled in single thread.
+    """
+
+    def handle(self):
+        data = self.request.recv(PACKET_SIZE)
+        self.request.send(data)
+
+
+class UDPRequestHandler(socketserver.BaseRequestHandler):
+    """
+    Handler for UDP Requests.
+    If we are using ThreadedUDPServer with the help of
+    SocketServer.ThreadingMixIn feature, every UDP request will
+    be handled in single thread.
+    """
+
+    def handle(self):
+        data = self.request[0].strip()
+        socket = self.request[1]
+        socket.sendto(data, self.client_address)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -39,67 +68,8 @@ class Server(object):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class ServerContainer(object):
-    """
-    A Thread or Process which holds the Server obj and
-    manages its life cycle
-    """
-
-    @abc.abstractmethod
-    def run(self):
-        """
-        Run a server
-        :return: None
-        """
-        pass
-
-    @abc.abstractmethod
-    def stop(self):
-        """
-        Stop the Server inside it
-        :return: None
-        """
-        pass
-
-    @abc.abstractmethod
-    def is_alive(self):
-        """
-        Check if Server Container is alive
-        :return: True or False
-        """
-        pass
-
-
-class TCPRequestHandler(SocketServer.BaseRequestHandler):
-    """
-    Handler for TCP Requests.
-    If we are using ThreadedTCPServer with the help of
-    SocketServer.ThreadingMixIn feature, every TCP request will
-    be handled in single thread.
-    """
-
-    def handle(self):
-        data = self.request.recv(PACKET_SIZE)
-        self.request.send(data)
-
-
-class UDPRequestHandler(SocketServer.BaseRequestHandler):
-    """
-    Handler for UDP Requests.
-    If we are using ThreadedUDPServer with the help of
-    SocketServer.ThreadingMixIn feature, every UDP request will
-    be handled in single thread.
-    """
-
-    def handle(self):
-        data = self.request[0].strip()
-        socket = self.request[1]
-        socket.sendto(data, self.client_address)
-
-
-class ThreadedTCPServer(SocketServer.ThreadingMixIn,
-                        SocketServer.TCPServer, Server):
+class ThreadedTCPServer(socketserver.ThreadingMixIn,
+                        socketserver.TCPServer, Server):
     """
     This is a TCP Server which will handle every single client request
     in separate thread.
@@ -118,8 +88,8 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn,
         pass
 
 
-class ThreadedUDPServer(SocketServer.ThreadingMixIn,
-                        SocketServer.UDPServer, Server):
+class ThreadedUDPServer(socketserver.ThreadingMixIn,
+                        socketserver.UDPServer, Server):
     """
     This is a UDP Server which will handle every single client request
     in separate thread.
@@ -138,39 +108,60 @@ class ThreadedUDPServer(SocketServer.ThreadingMixIn,
         pass
 
 
-class ServerThread(Thread, ServerContainer):
+class IperfServer(Server):
     """
-    Run A Server Inside a thread
+    Class to manage Iperf Server
     """
-
-    def __init__(self, server_obj):
-        super(ServerThread, self).__init__()
-        self.daemon = True
-        self._server_obj = server_obj
+    def __init__(self, source, protocol, port):
+        self._protocol = protocol
+        self._port = port
+        self._p_child = None
+        self._source = source
 
     def run(self):
-        self._server_obj.run()
+        command = "iperf3 --server --port %d --bind %s" % \
+                  (self._port, self._source)
+        if self._protocol == "UDP":
+            command += "--u"
+        self._p_child = subprocess.Popen(
+            command, shell=True, stdout=subprocess.PIPE,
+            preexec_fn=os.setsid)
 
     def stop(self):
-        self._server_obj.stop()
+        pid = self._p_child.pid
+        if self.is_alive():
+            os.killpg(os.getpgid(pid), signal.SIGTERM)
 
     def is_alive(self):
-        pass
+        return self._p_child.poll() is None
 
 
-class ServerProcess(mp.Process, ServerContainer):
-    """
-    Run a server inside a process
-    """
-    def __init__(self, server_obj):
-        super(ServerProcess, self).__init__()
-        self._server_obj = server_obj
-
-    def run(self):
-        self._server_obj.run()
-
-    def stop(self):
-        self.terminate()
-
-    def is_alive(self):
-        pass
+def create_server_class(protocol, port, source, server_type='socket'):
+        """
+        Create server object
+        :param protocol: protocol on which server works
+        :type protocol: str
+        :param port: port on which server listen
+        :type port: int
+        :param server_type: socket server or iperf server
+        :type server_type: int
+        :return: Server object
+        :rtype: Server
+        """
+        if protocol == "TCP" and server_type == "socket":
+            server_class = ThreadedTCPServer
+            args = ((source, int(port)), TCPRequestHandler)
+            kwargs = {}
+        elif protocol == "UDP" and server_type == "socket":
+            server_class = ThreadedUDPServer
+            args = ((source, int(port)), UDPRequestHandler)
+            kwargs = {}
+        elif server_type == "iperf":
+            server_class = IperfServer
+            args = (source, protocol, port)
+            kwargs = {}
+        else:
+            # TODO(pksingh) Write a proper exception class
+            raise ValueError("Invalid Value (%s, %s, %s) for Server" %
+                             (protocol, port, server_type))
+        return server_class, args, kwargs
