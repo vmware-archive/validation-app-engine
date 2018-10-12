@@ -9,7 +9,7 @@ directory and then upload to pypi package container path.
 Usage -
 =======
 
-python packer.py --server <pypi server address> --path <full path of package container in pypi server>
+python pypi_packer.py --server <pypi server address> --path <full path of package container in pypi server>
 
 for example, if path is /root/packages,
 a created package with the name "axon_<version>" will be created and uploaded to /root/packages.
@@ -39,6 +39,12 @@ Installation -
 
   for example -
   pip install axon --trusted-host 192.168.1.4 --index-url=http://192.168.1.4:9000
+
+  or
+
+  pip install axon --trusted-host 192.168.1.4 --extra-index-url=http://192.168.1.4:9000
+
+  even this extra index url can be added in pip.conf of package consuming host.
 
 Conclusion -
 ============
