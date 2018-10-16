@@ -5,7 +5,6 @@
 
 # Packages
 *.egg*
-dist
 build
 eggs
 parts

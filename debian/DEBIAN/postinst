@@ -1,0 +1,12 @@
+#!/bin/bash
+set -x
+echo "Running Post Install Scripts"
+echo "configuring axon"
+sudo mkdir /etc/axon
+sudo cp /opt/axon/etc/axon.conf /etc/axon/axon.conf
+echo "copying axon service file to systemd"
+sudo cp /opt/axon/etc/axon.service /etc/systemd/system/axon.service
+echo "reloading daemon"
+sudo systemctl daemon-reload
+echo "sytarting axon daemon"
+sudo systemctl start axon
