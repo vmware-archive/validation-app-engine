@@ -1,12 +1,13 @@
 import rpyc
+from rpyc.utils.server import ThreadedServer
 
 
-class Controller(rpyc.Service):
+class AxonServiceBase(rpyc.Service):
 
     RPYC_PROTOCOL_CONFIG = {}
 
     def __init__(self):
-        super(Controller, self).__init__()
+        super(AxonServiceBase, self).__init__()
 
     def on_connect(self, conn):
         print("Connected to %r", conn)
@@ -15,22 +16,36 @@ class Controller(rpyc.Service):
         print("Disconnected from %r", conn)
 
 
-class AxonController(Controller):
+class AxonService(AxonServiceBase):
 
     def __init__(self):
-        super(AxonController, self).__init__()
+        super(AxonService, self).__init__()
+
+
+class AxonController(object):
+
+    def __init__(self):
+        # TODO(Raies): Need tp read port from some conf file
+        self.axon_port = 5678
+        self.service_cls = AxonService()
+        self.service_cls.daemon = True
+        self.protocol_config = self.service_cls.RPYC_PROTOCOL_CONFIG
+        self.axon_service = ThreadedServer(
+            self.service_cls,
+            port=self.axon_port,
+            reuse_addr=True,
+            protocol_config=self.protocol_config)
+
+    def start(self):
+        self.axon_service.start()
+
+    def stop(self):
+        self.axon_service.close()
 
 
 def main():
-    # TODO(Raies): Read port from some config file if required
-    axon_service_port = 5678
-
-    from rpyc.utils.server import ThreadedServer
-    t = ThreadedServer(AxonController(),
-                       port=axon_service_port,
-                       protocol_config=AxonController.RPYC_PROTOCOL_CONFIG)
-    t.daemon = True
-    t.start()
+    axon_service = AxonController()
+    axon_service.start()
 
 
 if __name__ == '__main__':

@@ -1,3 +1,4 @@
+import os
 import setuptools
 
 # In python < 2.7.4, a lazy loading of package `pbr` will break
@@ -8,6 +9,16 @@ try:
 except ImportError:
     pass
 
+
+console_mapper = {
+    'posix': 'axon_service = axon.controller.rpyc_controller:main',
+    'nt': 'axon_service = axon.controller.windows.rpyc_win_service:main'
+}
+
+
 setuptools.setup(
     setup_requires=['pbr>=2.0.0'],
+    entry_points={
+        'console_scripts': [console_mapper[os.name]]
+    },
     pbr=True)
