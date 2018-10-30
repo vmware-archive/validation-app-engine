@@ -8,8 +8,16 @@ def get_engine(uri):
     return create_engine(uri)
 
 
-DATABASE_URL = os.getenv('DATABASE_URL', "sqlite:////tmp/traffic.db")
-db_session = scoped_session(sessionmaker())
+if os.name == "posix":
+   DB_URL = "sqlite:////opt/axon/traffic.db"
+else:
+   DB_URL = "sqlite:///C:\axon\\traffic.db"
+
+
+DATABASE_URL = os.getenv('DATABASE_URL', DB_URL)
+db_session = scoped_session(sessionmaker(
+    autoflush=True,
+    autocommit=False))
 engine = get_engine(DATABASE_URL)
 
 
@@ -20,4 +28,5 @@ def init_session():
 
 
 def get_session():
-    return db_session
+    return db_session()
+

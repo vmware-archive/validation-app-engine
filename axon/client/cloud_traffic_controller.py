@@ -1,5 +1,43 @@
+from multiprocessing.pool import ThreadPool
+
 from axon.client.traffic_controller import TrafficController
 from axon.client.axon_client import AxonClient
+
+
+def register_traffic(register_param):
+    server = register_param[0]
+    rule = register_param[1]
+    proxy_host = register_param[2]
+    with AxonClient(server, proxy_host=proxy_host) as client:
+        client.traffic.register_traffic([rule.as_dict()])
+
+
+def start_servers(start_param):
+    server = start_param[0]
+    proxy_host = start_param[1]
+    with AxonClient(server, proxy_host=proxy_host) as client:
+        client.traffic.start_servers()
+
+
+def start_clients(start_param):
+    server = start_param[0]
+    proxy_host = start_param[1]
+    with AxonClient(server, proxy_host=proxy_host) as client:
+        client.traffic.start_clients()
+
+
+def stop_servers(stop_param):
+    server = stop_param[0]
+    proxy_host = stop_param[1]
+    with AxonClient(server, proxy_host=proxy_host) as client:
+        client.traffic.stop_servers()
+
+
+def stop_clients(stop_param):
+    server = stop_param[0]
+    proxy_host = stop_param[1]
+    with AxonClient(server, proxy_host=proxy_host) as client:
+        client.traffic.stop_clients()
 
 
 class TrafficRecord(object):
@@ -12,9 +50,10 @@ class TrafficRecord(object):
         if (protocol, port) not in self._servers:
             self._servers.append((protocol, port))
 
-    def add_client(self, protocol, port, destination, connected):
+    def add_client(self, protocol, port, destination, connected, action):
         if (protocol, port, destination) not in self._clients:
-            self._clients.append((protocol, port, destination, connected))
+            self._clients.append((
+                protocol, port, destination, connected, action))
 
     def as_dict(self):
         return dict(zip(['endpoint', 'servers', 'clients'],
@@ -39,30 +78,52 @@ class CloudTrafficController(TrafficController):
             self._servers[dst].add_server(trule.protocol, trule.port.port)
             self._servers[src].add_client(
                 trule.protocol, trule.port.port,
-                dst, bool(trule.action))
-        for server, rule in self._servers.items():
-            print "pushing on server %s" % server
-            with AxonClient(server, proxy_host=self._gw_host) as client:
-                client.traffic.register_traffic([rule.as_dict()])
+                dst, trule.connected, trule.action)
+        pool = ThreadPool(50)
+        params = [(server, rule, self._gw_host) for
+                  server, rule in self._servers.items()]
+        pool.map(register_traffic, params)
+        pool.close()
+        pool.join()
 
     def unregister_traffic(self, traffic_config):
         pass
 
+    def __stop_clients(self):
+        pool = ThreadPool(50)
+        params = [(server, self._gw_host) for server in self._servers.keys()]
+        pool.map(stop_clients, params)
+        pool.close()
+        pool.join()
+
+    def __stop_servers(self):
+        pool = ThreadPool(50)
+        params = [(server, self._gw_host) for server in self._servers.keys()]
+        pool.map(stop_servers, params)
+        pool.close()
+        pool.join()
+
+    def __start_servers(self):
+        pool = ThreadPool(50)
+        params = [(server, self._gw_host) for server in self._servers.keys()]
+        pool.map(start_servers, params)
+        pool.close()
+        pool.join()
+
+    def __start_clients(self):
+        pool = ThreadPool(50)
+        params = [(server, self._gw_host) for server in self._servers.keys()]
+        pool.map(start_clients, params)
+        pool.close()
+        pool.join()
+
     def stop_traffic(self):
-        for server in self._servers.keys():
-            with AxonClient(server, proxy_host=self._gw_host) as client:
-                client.traffic.stop_clients()
-        for server in self._servers.keys():
-            with AxonClient(server, proxy_host=self._gw_host) as client:
-                client.traffic.stop_servers()
+        self.__stop_clients()
+        self.__stop_servers()
 
     def start_traffic(self):
-        for server in self._servers.keys():
-            with AxonClient(server, proxy_host=self._gw_host) as client:
-                client.traffic.start_servers()
-        for server in self._servers.keys():
-            with AxonClient(server, proxy_host=self._gw_host) as client:
-                client.traffic.start_clients()
+        self.__start_servers()
+        self.__start_clients()
 
     def restart_traffic(self):
         self.stop_traffic()

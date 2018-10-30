@@ -6,6 +6,7 @@ import socket
 from threading import Thread
 import time
 
+import axon.common.config as conf
 from axon.common.consts import PACKET_SIZE
 from axon.traffic.resources import TCPRecord, UDPRecord
 from axon.traffic.recorder import SqliteDbRecorder
@@ -33,7 +34,7 @@ class Client(object):
 
 class TCPClient(Client):
     def __init__(self, source, destination, port, connected=True,
-                 recorder=None, request_count=1):
+                 action=1, recorder=None, request_count=1):
         """
         Client to send TCP requests
         :param source: source ip
@@ -42,6 +43,11 @@ class TCPClient(Client):
         :type destination: str
         :param port: destination server port
         :type port: int
+        :param connected: whether endpoints are connected or not
+        :type connected: bool
+        :param action: whether traffic will be accepted or rejected by server
+                      i.e. 0 for reject and 1 for allow
+        :type action: int
         :param recorder: recorder object which will record the data
         :type recorder: TrafficRecorder
         """
@@ -49,9 +55,10 @@ class TCPClient(Client):
         self._port = port
         self._destination = destination
         self._start_time = None
-        self._recorder = recorder()
+        self._recorder = recorder if recorder else SqliteDbRecorder()
         self._request_count = request_count
         self._connected = connected
+        self._action = action
 
     def _create_socket(self, address_family=socket.AF_INET,
                        socket_type=socket.SOCK_STREAM):
@@ -90,8 +97,6 @@ class TCPClient(Client):
             sock.send(payload)
             sock.recv(PACKET_SIZE)
         except Exception as e:
-            # TODO(pksingh) add logging
-            print(e, 'TCP')
             raise
         finally:
             sock.close()
@@ -105,17 +110,25 @@ class TCPClient(Client):
         time_diff = datetime.datetime.now() - self._start_time
         return time_diff.seconds * 1000 + time_diff.microseconds * .001
 
+    def is_traffic_successful(self, success):
+        if not bool(self._connected):
+            result = bool(self._connected) == bool(success)
+        else:
+            # change it later, when action accepts more values
+            result = bool(self._action) == bool(success)
+        return result
+
     def record(self, success=True, error=None):
         """
         Record the traffic to data source
         :return: None
         """
-        success = bool(self._connected) == bool(success)
+        success = self.is_traffic_successful(success)
         if self._recorder:
             record = TCPRecord(
                 self._source, self._destination, self._port,
                 self._get_latency(),
-                error, success)
+                error, success, self._connected)
             self._recorder.record_traffic(record)
 
     def ping(self):
@@ -160,8 +173,6 @@ class UDPClient(TCPClient):
             sock.sendto(payload, (self._destination, self._port))
             sock.recvfrom(PACKET_SIZE)
         except Exception as e:
-            # TODO(pksingh) add logging
-            print(e, 'UDP')
             raise
         finally:
             sock.close()
@@ -171,35 +182,36 @@ class UDPClient(TCPClient):
         Record the traffic to data source
         :return: None
         """
-        success = bool(self._connected) == bool(success)
+        success = self.is_traffic_successful(success)
         if self._recorder:
             record = UDPRecord(
                 self._source, self._destination, self._port,
-                self._get_latency(), error, success)
+                self._get_latency(), error, success, self._connected)
             self._recorder.record_traffic(record)
 
 
 class TrafficClient(object):
 
-    REQUEST_RATE = 100
-
-    def __init__(self, src, destinations, request_rate=100):
+    def __init__(self, src, destinations, request_rate=100, recorder=None):
         self._src = src
-        self._reqest_rate = min(request_rate, len(destinations))
+        self._request_rate = min(request_rate, len(destinations))
         self._destinations = itertools.cycle(destinations)
+        self._recorder = recorder if recorder else conf.TRAFFIC_RECORDER
 
     def _send_traffic(self):
         threads = []
-        for _ in range(self.REQUEST_RATE):
-            protocol, port, endpoint, connected = next(self._destinations)
+
+        for _ in range(self._request_rate):
+            protocol, port, endpoint, connected, action = \
+                next(self._destinations)
             if protocol == "TCP":
                 client = TCPClient(
                     self._src, endpoint, port,
-                    connected, SqliteDbRecorder)
+                    connected, action, self._recorder)
             if protocol == "UDP":
                 client = UDPClient(
                     self._src, endpoint, port,
-                    connected, SqliteDbRecorder)
+                    connected, action, self._recorder)
             thread = Thread(target=client.ping)
             thread.daemon = True
             thread.start()

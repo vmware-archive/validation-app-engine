@@ -6,7 +6,7 @@ import socket
 import logging
 import sys
 
-from axon.controller.rpyc_controller import AxonController
+from axon.controller.axon_rpyc_controller import AxonController
 
 
 class AxonService(win32serviceutil.ServiceFramework):

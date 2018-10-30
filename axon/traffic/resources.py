@@ -7,7 +7,8 @@ class TrafficRecord:
     """
     TRAFFIC_TYPE = None
 
-    def __init__(self, src, dst, port, latency, error=None, success=True):
+    def __init__(self, src, dst, port, latency,
+                 error=None, success=True, connected=True):
         self.src = src
         self.dst = dst
         self.port = port
@@ -15,16 +16,15 @@ class TrafficRecord:
         self.error = error
         self.success = success
         self.traffic_type = self.TRAFFIC_TYPE
-        self.created_time = time.time()
+        self.connected = connected
+        self.created = time.time()
 
     def as_dict(self):
         return {
-            'source': self.src, 'destination': self.dst, 'port': self.port,
+            'src': self.src, 'dst': self.dst, 'port': self.port,
             'latency': self.latency, 'error': self.error,
             'success': self.success, 'type': self.traffic_type,
-            'created_time': self.created_time
-
-        }
+            'created': self.created, 'connected': self.connected}
 
 
 class TCPRecord(TrafficRecord):

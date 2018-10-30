@@ -3,8 +3,8 @@ Riak DatabaseAPI
 """
 import logging
 
-from database.interface.dbapi import DatabaseAPI
-from database.backends.riak.riak_client import \
+from axon.db.interface.dbapi import DatabaseAPI
+from axon.db.backends.riak.riak_client import \
     RiakClient
 
 

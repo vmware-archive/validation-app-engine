@@ -16,8 +16,11 @@ class TrafficManger(Manager):
     def start_clients(self):
         self._client.traffic.start_clients()
 
+    def get_traffic_config(self, endpoint=None):
+        return self._client.traffic.get_traffic_config(endpoint)
+
     def register_traffic(self, traffic_rules):
-        self._client.traffic.register_traffic(traffic_rules)
+        return self._client.traffic.register_traffic(traffic_rules)
 
     def unregister_traffic(self, src=None):
         self._client.traffic.unregister_traffic(src)
@@ -32,7 +35,7 @@ class TrafficManger(Manager):
         self._client.traffic.stop_servers(namespace)
 
     def start_servers(self, namespace=None):
-        self._client.traffic.start_servers(namespace)
+        return self._client.traffic.start_servers(namespace)
 
     def stop_server(self, protocol, port, namespace=None):
         self._client.traffic.stop_server(protocol, port, namespace)

@@ -5,7 +5,7 @@ infromation and its processing engines.
 from collections import defaultdict as ddict
 import json
 
-import database.backends.models.traffic_models as traffic_models
+import axon.db.backends.models.traffic_models as traffic_models
 
 
 class PortAlreadyUsed(Exception):

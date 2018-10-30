@@ -7,7 +7,7 @@ import inspect
 import pkgutil
 import six
 
-from database.dataclass_factory import dataclass_factory
+from axon.db.dataclass_factory import dataclass_factory
 
 
 @six.add_metaclass(ABCMeta)
@@ -21,7 +21,7 @@ class DatabaseAPI(object):
     def __init__(self):
         self._class_cache = {}
         self.base_packages = (
-            'database.models',)
+            'axon.db.models',)
 
     @abstractproperty
     def backend(self):

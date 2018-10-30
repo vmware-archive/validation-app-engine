@@ -4,9 +4,9 @@ and counters)
 """
 import os.path
 
-from database.dataclass_factory import dataclass_factory
-import database.backends.riak.formatters as input_formatters
-import database.backends.riak.formatters as output_formatters
+from axon.db.dataclass_factory import dataclass_factory
+import axon.db.backends.riak.formatters as input_formatters
+import axon.db.backends.riak.formatters as output_formatters
 
 HTTP_VERBS = (GET, POST, PUT, DELETE) = ("GET", "POST", "PUT", "DELETE")
 

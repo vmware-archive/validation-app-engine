@@ -1,21 +1,19 @@
-from axon.traffic.connected_state import ConnectedState
+from axon.traffic.connected_state import ConnectedStateProcessor, \
+    DBConnectedState
 from axon.traffic.manager import RootNsServerManager, NamespaceServerManager,\
     NamespaceClientManager, RootNsClientManager
 from axon.utils.network_utils import NamespaceManager, Namespace,\
     InterfaceManager
 
 
-PRIMARY_IFACE_NAME = "nsx-eth0"
-
-
 class AxonRootNamespaceServerAgent(object):
     """
     Launch Servers in Root Namespace
     """
-    def __init__(self):
+    def __init__(self, primary_if_name="eth0"):
         self.mngrs_map = {}
-        self.connected_state = ConnectedState()
-        self.primary_if = InterfaceManager().get_interface(PRIMARY_IFACE_NAME)
+        self.connected_state = ConnectedStateProcessor(DBConnectedState())
+        self.primary_if = InterfaceManager().get_interface(primary_if_name)
 
     def start_servers(self, namespace='root'):
         """
@@ -24,6 +22,7 @@ class AxonRootNamespaceServerAgent(object):
         """
         mngr = RootNsServerManager() if not \
             self.mngrs_map.get(namespace) else self.mngrs_map.get(namespace)
+
         servers = self.connected_state.get_servers(self.primary_if['address'])
         servers = servers if servers else []
         for proto, port in servers:
@@ -76,8 +75,9 @@ class AxonNameSpaceServerAgent(AxonRootNamespaceServerAgent):
     Launch Servers in different namespaces
     """
 
-    def __init__(self, ns_list=None, ns_interface_map=None):
-        super(AxonNameSpaceServerAgent, self).__init__()
+    def __init__(self, primary_if_name="eth0",
+                 ns_list=None, ns_interface_map=None):
+        super(AxonNameSpaceServerAgent, self).__init__(primary_if_name)
         self._ns_list = ns_list
         self._ns_iterface_map = ns_interface_map
         self._setup()
@@ -101,7 +101,8 @@ class AxonNameSpaceServerAgent(AxonRootNamespaceServerAgent):
             servers = self.connected_state.get_servers(interface)
             if interface is None or not servers:
                 continue
-            ns_mngr = NamespaceServerManager(ns)
+            ns_mngr = NamespaceServerManager(ns) if not \
+                self.mngrs_map.get(ns) else self.mngrs_map.get(ns)
             for proto, port in servers:
                 ns_mngr.start_server(proto, port, interface)
             self.mngrs_map[ns] = ns_mngr
@@ -142,27 +143,30 @@ class AxonNameSpaceServerAgent(AxonRootNamespaceServerAgent):
         for ns in ns_list:
             server_mngr = self.mngrs_map.get(ns)
             if server_mngr:
-                server_mngr.stop_server(port, protocol, ns)
+                server_mngr.stop_server(port, protocol)
 
 
 class AxonRootNamespaceClientAgent(object):
     """
     Launch Servers in Root Namespace
     """
-    def __init__(self):
+    def __init__(self, primary_if_name="eth0"):
         self.mngrs_map = {}
-        self.connected_state = ConnectedState()
-        self.primary_if = InterfaceManager().get_interface(PRIMARY_IFACE_NAME)
+        self.connected_state = ConnectedStateProcessor(DBConnectedState())
+        self.primary_if = InterfaceManager().get_interface(primary_if_name)
 
     def start_clients(self):
+
         clients = self.connected_state.get_clients(self.primary_if['address'])
         clients = clients if clients else []
         if clients:
-            mngr = RootNsClientManager(clients)
+            mngr = RootNsClientManager(clients) if not \
+                self.mngrs_map.get('localhost') else \
+                self.mngrs_map.get('localhost')
             mngr.start_client(self.primary_if['address'])
-            self.mngrs_map['root'] = mngr
+            self.mngrs_map['localhost'] = mngr
 
-    def stop_clients(self, namespace='root'):
+    def stop_clients(self, namespace='localhost'):
         """
         Stop all Clients
         :return: None
@@ -170,9 +174,9 @@ class AxonRootNamespaceClientAgent(object):
         for mngr in self.mngrs_map.values():
             mngr.stop_clients()
 
-    def stop_client(self, src):
+    def stop_client(self, namespace='localhost'):
         for mngr in self.mngrs_map.values():
-            mngr.stop_client(src)
+            mngr.stop_client()
 
 
 class AxonNameSpaceClientAgent(AxonRootNamespaceClientAgent):
@@ -180,8 +184,9 @@ class AxonNameSpaceClientAgent(AxonRootNamespaceClientAgent):
     Launch Servers in different namespaces
     """
 
-    def __init__(self, ns_list=None, ns_iterface_map=None):
-        super(AxonNameSpaceClientAgent, self).__init__()
+    def __init__(self, primary_if_name="eth0",
+                 ns_list=None, ns_iterface_map=None):
+        super(AxonNameSpaceClientAgent, self).__init__(primary_if_name)
         self._ns_list = ns_list
         self._ns_iterface_map = ns_iterface_map
         self._setup()
@@ -201,7 +206,9 @@ class AxonNameSpaceClientAgent(AxonRootNamespaceClientAgent):
             clients = self.connected_state.get_clients(interface[0].address)
             if not clients:
                 continue
-            ns_mngr = NamespaceClientManager(ns, clients)
+            ns_mngr = NamespaceClientManager(ns, clients) if not \
+                self.mngrs_map.get(ns) else \
+                self.mngrs_map.get(ns)
             src = Namespace(ns).interfaces[0].address
             ns_mngr.start_client(src)
             self.mngrs_map[ns] = ns_mngr
@@ -212,10 +219,9 @@ class AxonNameSpaceClientAgent(AxonRootNamespaceClientAgent):
             if ns in ns_list:
                 mngr.stop_clients()
 
-    def stop_client(self, src):
-        for namespace, interface in self._ns_iterface_map.items():
-            if interface is None or interface != src:
-                continue
+    def stop_client(self, namespace=None):
+        namespace = self._ns_iterface_map.get(namespace)
+        if namespace:
             ns_mngr = self.mngrs_map.get(namespace)
             if ns_mngr:
-                ns_mngr.stop_client(src)
+                ns_mngr.stop_client()

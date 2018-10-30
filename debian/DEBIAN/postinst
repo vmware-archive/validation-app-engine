@@ -4,9 +4,14 @@ echo "Running Post Install Scripts"
 echo "configuring axon"
 sudo mkdir /etc/axon
 sudo cp /opt/axon/etc/axon.conf /etc/axon/axon.conf
+echo "" | sudo tee --append /etc/axon/axon.conf
+echo HELPER_IP=$HELPER_IP |sudo tee --append /etc/axon/axon.conf
+echo TEST_ID=$TEST_ID |sudo tee --append /etc/axon/axon.conf
+echo RIAK_PORT=$RIAK_PORT |sudo tee --append /etc/axon/axon.conf
 echo "copying axon service file to systemd"
 sudo cp /opt/axon/etc/axon.service /etc/systemd/system/axon.service
 echo "reloading daemon"
 sudo systemctl daemon-reload
 echo "sytarting axon daemon"
 sudo systemctl start axon
+sudo systemctl enable axon

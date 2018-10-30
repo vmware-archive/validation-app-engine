@@ -14,11 +14,14 @@ import six
 import time
 import uuid
 
-import database.backends.riak.riak_datatypes as riak_datatypes
-from database.dataclass_factory import dataclass_factory
+import axon.db.backends.riak.riak_datatypes as riak_datatypes
+from axon.db.dataclass_factory import dataclass_factory
 
-# TODO: read testid from config
-config_testid = str(uuid.uuid4())
+
+def get_test_id():
+    from axon.common import config as conf
+    return conf.TEST_ID
+
 
 Column = dataclass_factory(
     'Column', [
@@ -108,7 +111,7 @@ class Record(object):
     delete_cls = riak_datatypes.DeleteObject
 
     testid = Column(
-        indexed=True, stored=True, default=lambda: config_testid, key_col=True)
+        indexed=True, stored=True, default=lambda: get_test_id(), key_col=True)
 
     def __new__(cls, *args, **kwargs):
         _ = (args, kwargs)  # pylint
@@ -266,7 +269,7 @@ class SearchRecord(Record):
         indexed=True,
         stored=True,
         schema_name='testid_register',
-        default=lambda: config_testid,
+        default=lambda: get_test_id(),
         key_col=True)
 
 
@@ -280,7 +283,7 @@ class MapRecord(Record):
         indexed=True,
         stored=True,
         schema_name='testid_register',
-        default=lambda: config_testid,
+        default=lambda: get_test_id(),
         key_col=True)
 
     @property

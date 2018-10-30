@@ -25,7 +25,7 @@ class BaseRepository(object):
 
     def delete_batch(self, session, ids=None):
         ids = ids or []
-        [self.delete(session, uuid=id) for id in ids]
+        [self.delete(session, id=id) for id in ids]
 
     def delete_all(self, session):
         session.query(self.model_class).delete()
@@ -34,7 +34,7 @@ class BaseRepository(object):
     def get(self, session, **filters):
         model = session.query(self.model_class).filter_by(**filters).first()
         if not model:
-            return
+            return {}
         return model.to_dict()
 
     def get_all(self, session, **filters):
@@ -57,21 +57,21 @@ class Repositories(object):
         self.record = TrafficRecordsRepositery()
         self.connected_state = ConnectedStateRepository()
 
-    def create_record(self, session, **traffi_dict):
+    def create_record(self, session, **traffic_dict):
         with session.begin(subtransactions=True):
-            if not traffi_dict.get('uuid'):
-                traffi_dict['uuid'] = str(uuid.uuid4())
-            record = models.TrafficRecord(**traffi_dict)
+            if not traffic_dict.get('id'):
+                traffic_dict['id'] = str(uuid.uuid4())
+            record = models.TrafficRecord(**traffic_dict)
             session.add(record)
-            return self.record.get(session, uuid=record.uuid)
+            return self.record.get(session, id=record.id)
 
     def create_connected_state(self, session, **cs_dict):
         with session.begin(subtransactions=True):
-            if not cs_dict.get('uuid'):
-                cs_dict['uuid'] = str(uuid.uuid4())
+            if not cs_dict.get('id'):
+                cs_dict['id'] = str(uuid.uuid4())
             record = models.ConnectedState(**cs_dict)
             session.add(record)
-            return self.connected_state.get(session, uuid=record.uuid)
+            return self.connected_state.get(session, id=record.id)
 
 
 class ConnectedStateRepository(BaseRepository):
@@ -85,23 +85,10 @@ class ConnectedStateRepository(BaseRepository):
         result = self.get(session, endpoint=endpoint_ip)
         return result.get('clients', [])
 
-    def update_servers(self, session, endpoint, servers):
-        current_servers = self.get_servers(session, endpoint)
-        current_servers.extend(servers)
-        session.query(self.model_class).filter_by(
-            endpoint=endpoint).update(
-            {"servers": current_servers},
-            synchronize_session=False)
-        session.commit()
-
-    def update_clients(self, session, endpoint, clients):
-        current_clints = self.get_clients(session, endpoint)
-        current_clints.extend(clients)
-        session.query(self.model_class).filter_by(
-            endpoint=endpoint).update(
-            {"clients": current_clints},
-            synchronize_session=False)
-        session.commit()
+    def update(self, session, endpoint, **model_kwargs):
+        with session.begin(subtransactions=True):
+            session.query(self.model_class).filter_by(
+                endpoint=endpoint).update(model_kwargs)
 
 
 class TrafficRecordsRepositery(BaseRepository):

@@ -4,10 +4,11 @@
 Description=Axon Traffic Generaion Service Daemon
 
 [Service]
+Type=idle
 Environment="PYTHONPATH=$PYTHONPATH:/opt/"
 ExecStart=/usr/bin/python -maxon.controller.axon_rpyc_controller
 StandardOutput=journal+console
+EnvironmentFile=/etc/axon/axon.conf
 
 [Install]
 WantedBy=multi-user.target
-Alias=axon.service

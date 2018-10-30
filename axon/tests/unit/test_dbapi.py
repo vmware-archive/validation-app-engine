@@ -5,8 +5,8 @@ unittests for dbapi
 import pytest
 import uuid
 
-import database.models.traffic_models as traffic_models
-from database.backends.riak.riak_dbapi import RiakDatabaseAPI
+import axon.db.models.traffic_models as traffic_models
+from axon.db.backends.riak.riak_dbapi import RiakDatabaseAPI
 
 
 @pytest.fixture(scope="module")

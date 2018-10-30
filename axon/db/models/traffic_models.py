@@ -6,8 +6,8 @@ alters the returned data to make them protocol independent
 import time
 import uuid
 
-import database.models.base_model as drecord
-from database.models.base_model import Column
+import axon.db.models.base_model as drecord
+from axon.db.models.base_model import Column
 
 
 class Fault(drecord.TimestampedRecord):
@@ -273,27 +273,26 @@ class IPRecord(drecord.SearchRecord):
     def create_request(self):
         create_req = super(IPRecord, self).create_request
         ret_val = [create_req]
-        if self.key is None:
-            counter_type = 'failed' if self.failed else 'success'
-            if self.connected:
-                counter_type += '_connected'
-            else:
-                counter_type += '_disconnected'
-            req_cnt = RequestCounts(**{
-                counter_type: 1,
-                'created': int(self.created)
-            })
-            update_rc_req = req_cnt.map_create_request
-            update_rc_req.key = '%s_%d' % (self.testid, int(self.created))
-            ret_val.append(update_rc_req)
-            if self.failed:
-                fault_req = Fault(
-                    src=self.src,
-                    dst=self.dst,
-                    created=self.created,
-                    connected=self.connected,
-                    protocol=self.protocol).create_request
-                ret_val.append(fault_req)
+        counter_type = 'failed' if self.failed else 'success'
+        if self.connected:
+            counter_type += '_connected'
+        else:
+            counter_type += '_disconnected'
+        req_cnt = RequestCounts(**{
+            counter_type: 1,
+            'created': int(self.created)
+        })
+        update_rc_req = req_cnt.map_create_request
+        update_rc_req.key = '%s_%d' % (self.testid, int(self.created))
+        ret_val.append(update_rc_req)
+        if self.failed:
+            fault_req = Fault(
+                src=self.src,
+                dst=self.dst,
+                created=self.created,
+                connected=self.connected,
+                protocol=self.protocol).create_request
+            ret_val.append(fault_req)
         return ret_val
 
 

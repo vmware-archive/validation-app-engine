@@ -24,9 +24,7 @@ class PickelEncodedType(TypeDecorator):
                             % (self.__class__.__name__,
                                self.type.__name__,
                                type(value).__name__))
-        print value
         serialized_value = pickle.dumps(value)
-        print serialized_value
         return serialized_value
 
     def process_result_value(self, value, dialect):
@@ -78,26 +76,25 @@ Base = declarative_base(cls=BaseModel)
 class TrafficRecord(Base):
     __tablename__ = 'trafficrecord'
 
-    uuid = Column(String(36), primary_key=True)
-    source = Column(String(36))
-    destination = Column(String(36))
+    id = Column(String(36), primary_key=True)
+    src = Column(String(36))
+    dst = Column(String(36))
     port = Column(Integer())
     latency = Column(Float())
     error = Column(String(100))
     success = Column(Boolean(), default=True)
     type = Column(String(10))
-    created_time = Column(Float())
+    created = Column(Float())
 
     FIELDS = {
-        'uuid': str,
-        'source': str,
-        'destination': str,
+        'id': str,
+        'src': str,
+        'dst': str,
         'port': int,
         'latency': float,
         'error': str,
         'type': str,
-        'created_time': int
-
+        'created': int,
     }
 
     FIELDS.update(Base.FIELDS)
@@ -106,14 +103,16 @@ class TrafficRecord(Base):
 class ConnectedState(Base):
     __tablename__ = 'connectedstate'
 
-    uuid = Column(String(36))
+    id = Column(String(36))
     endpoint = Column(String(36), primary_key=True)
     servers = Column(PickleEncodedList)
     clients = Column(PickleEncodedList)
 
     FIELDS = {
-        'uuid': str,
+        'id': str,
         'endpoint': str,
         'servers': passby,
         'clients': passby
     }
+
+    FIELDS.update(Base.FIELDS)

@@ -73,7 +73,6 @@ class NamespaceManager(object):
             if not ns_list:
                 return
             for ns in ns_list.rstrip().split("\n"):
-                print ns
                 ns_info = ns.split()
                 id = None
                 if len(ns_info) > 1:
@@ -150,7 +149,6 @@ class InterfaceManager(object):
     def __init__(self):
         self._interface_map = {}
         self._discover_interfaces()
-        print self._interface_map
 
     def _discover_interfaces(self):
         addrs = psutil.net_if_addrs()

@@ -1,5 +1,6 @@
 import abc
 from collections import defaultdict
+import logging
 import six
 import platform
 if "Linux" in platform.uname():  # noqa
@@ -88,7 +89,10 @@ class ClientRegistry(object):
         :param namespace: name space where the client is running
         :type namespace: str
         """
-        del self.__registry[namespace]
+        try:
+            del self.__registry[namespace]
+        except KeyError:
+            pass
 
     def get_client(self, namespace):
         """
@@ -100,7 +104,7 @@ class ClientRegistry(object):
         :return: Client object
         :rtype: TrafficClient
         """
-        return self.__registry[namespace]
+        return self.__registry.get(namespace)
 
     def get_all_client(self):
         """
@@ -145,28 +149,73 @@ class RootNsServerManager(ServerManager):
 
     def __init__(self):
         self._server_registry = ServerRegistry()
+        self.log = logging.getLogger(__name__)
 
     def start_server(self, protocol, port, src="0.0.0.0"):
-        server_cls, args, kwargs = create_server_class(protocol, port, src)
-        process = WorkerProcess(server_cls, args, kwargs)
-        process.start()
-        self._server_registry.add_server(
-            self.ROOT_NAMESPACE_NAME, port, protocol, process)
-
-    def stop_server(self, port, protocol):
         server_process = self._server_registry.get_server(
             self.ROOT_NAMESPACE_NAME, port, protocol)
-        if server_process:
-            server_process.stop()
-            self._server_registry.remove_server(
+        if server_process and server_process.is_running():
+            self.log.warning("%s server on port %s is already running" %
+                             (protocol, port))
+            return
+        self.log.info(
+            "Starting %s server on port %s on interface %s" %
+            (protocol, port, src))
+        try:
+            server_cls, args, kwargs = create_server_class(protocol, port, src)
+            process = WorkerProcess(server_cls, args, kwargs)
+            process.start()
+            self._server_registry.add_server(
+                self.ROOT_NAMESPACE_NAME, port, protocol, process)
+        except Exception as e:
+            self.log.exception(
+                "Starting %s server on port %s on interface %s failed" %
+                (protocol, port, src))
+            raise e
+
+    def stop_server(self, port, protocol):
+        self.log.info(
+            "Stopping %s server on port %s" % (protocol, port))
+        try:
+            server_process = self._server_registry.get_server(
                 self.ROOT_NAMESPACE_NAME, port, protocol)
+            if server_process and server_process.is_running():
+                server_process.stop()
+                self._server_registry.remove_server(
+                    self.ROOT_NAMESPACE_NAME, port, protocol)
+            elif server_process and not server_process.is_running():
+                self.log.warning("%s server is not running on %s" %
+                                 (protocol, port))
+                self._server_registry.remove_server(
+                    self.ROOT_NAMESPACE_NAME, port, protocol)
+            else:
+                self.log.warning("%s server is not running on %s" %
+                                 (protocol, port))
+        except Exception as e:
+            self.log.exception(
+                "Stopping %s server on port %s failed" % (protocol, port))
+            raise e
 
     def stop_all_servers(self):
-        servers = [server for ns, conf_server_map in
+        servers = [(conf, server) for ns, conf_server_map in
                    self._server_registry.get_all_servers() for
                    conf, server in conf_server_map.items()]
-        for server in servers:
-            server.stop()
+        for conf, server in servers:
+            self.log.info(
+                "Stopping %s server on port %s" % (conf[1], conf[0]))
+            try:
+                if server.is_running():
+                    server.stop()
+                    self._server_registry.remove_server(
+                        self.ROOT_NAMESPACE_NAME, conf[0], conf[1])
+                else:
+                    self.log.warning("%s server is not running on %s" %
+                                     (conf[1], conf[0]))
+                    self._server_registry.remove_server(
+                        self.ROOT_NAMESPACE_NAME, conf[0], conf[1])
+            except Exception as e:
+                self.log.exception(
+                    "Stopping %s server on port %s failed" % (conf[1], conf[0]))
 
     def list_servers(self):
         servers = [(ns, conf) for ns, conf_server_map in
@@ -195,19 +244,53 @@ class NamespaceServerManager(RootNsServerManager):
         self._ns_full_path = self.NAMESPACE_PATH + self._ns
 
     def start_server(self, protocol, port, src="0.0.0.0"):
-        server_cls, args, kwargs = create_server_class(protocol, port, src)
-        process = WorkerProcess(server_cls, args, kwargs)
-        with Namespace(self._ns_full_path, 'net'):
-            process.start()
-        self._server_registry.add_server(
-            self._ns, port, protocol, process)
-
-    def stop_server(self, port, protocol, namespace):
         server_process = self._server_registry.get_server(
-            namespace, port, protocol)
-        if server_process:
+            self._ns, port, protocol)
+        if server_process and server_process.is_running():
+            self.log.warning("%s server on port %s is already running" %
+                             (protocol, port))
+            return
+        self.log.info(
+            "Starting %s server on port %s on interface %s in namespace %s" %
+            (protocol, port, src, self._ns))
+        try:
+            server_cls, args, kwargs = create_server_class(protocol, port, src)
+            process = WorkerProcess(server_cls, args, kwargs)
             with Namespace(self._ns_full_path, 'net'):
-                server_process.stop()
+                process.start()
+            self._server_registry.add_server(
+                self._ns, port, protocol, process)
+        except Exception as e:
+            self.log.exception(
+                "Starting %s server on port %s on interface %s failed" %
+                (protocol, port, src))
+            raise e
+
+    def stop_server(self, port, protocol):
+        try:
+            server_process = self._server_registry.get_server(
+                self._ns, port, protocol)
+            self.log.info(
+                "Stop %s server on port %s in namespace %s" %
+                (protocol, port, self._ns))
+            if server_process and server_process.is_running():
+                with Namespace(self._ns_full_path, 'net'):
+                    server_process.stop()
+                    self._server_registry.remove_server(
+                        self._ns, port, protocol)
+            elif server_process and not server_process.is_running():
+                self.log.warning("%s server is not running on %s" %
+                                 (protocol, port))
+                self._server_registry.remove_server(
+                    self.ROOT_NAMESPACE_NAME, port, protocol)
+            else:
+                self.log.warning("%s server is not running on %s" %
+                                 (protocol, port))
+        except Exception as e:
+            self.log.exception(
+                "Stopping %s server on port %s failed in namespace %s" %
+                (protocol, port, self._ns))
+            raise e
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -248,23 +331,53 @@ class RootNsClientManager(ClientManager):
     def __init__(self, clients):
         self._client_registry = ClientRegistry()
         self._clients = clients
+        self.log = logging.getLogger(__name__)
 
     def start_client(self, src):
-        process = WorkerProcess(TrafficClient, (src, self._clients), {})
-        process.start()
-        self._client_registry.add_client(self.ROOT_NAMESPACE_NAME, process)
-
-    def stop_client(self, src):
+        self.log.info("Starting client process on interface %s" % src)
         client = self._client_registry.get_client(self.ROOT_NAMESPACE_NAME)
-        if client:
-            client.stop()
-            self._client_registry.remove_client(self.ROOT_NAMESPACE_NAME)
+        if client and client.is_running():
+            self.log.warning("Client is already running on %s" % src)
+            return
+        try:
+            process = WorkerProcess(
+                TrafficClient, (src, self._clients), {})
+            process.start()
+            self._client_registry.add_client(self.ROOT_NAMESPACE_NAME, process)
+        except Exception as e:
+            self.log.exception(
+                "Starting client process on interface %s failed" % src)
+            raise e
+
+    def stop_client(self):
+        self.log.info("Stopping client process")
+        client = self._client_registry.get_client(self.ROOT_NAMESPACE_NAME)
+        try:
+            if client and client.is_running():
+                client.stop()
+                self._client_registry.remove_client(self.ROOT_NAMESPACE_NAME)
+            elif client and not client.is_running():
+                self.log.warning("Client is not running in root namespace")
+                self._client_registry.remove_client(self.ROOT_NAMESPACE_NAME)
+            else:
+                self.log.warning("Client is not running in root namespace")
+        except Exception as e:
+            self.log.exception(
+                "Stopping client failed in namespace %s" %
+                self.ROOT_NAMESPACE_NAME)
 
     def stop_clients(self):
-        client = [client for namespace, client in
-                  self._client_registry.get_all_client()]
-        for client in client:
-            client.stop()
+        self.log.info("Stopping all client processes")
+        clients = [(client, namespace) for namespace, client in
+                   self._client_registry.get_all_client()]
+
+        for client, namespace in clients:
+            try:
+                client.stop()
+                self._client_registry.remove_client(namespace)
+            except Exception as e:
+                self.log.exception("Stopping client failed in namespace %s" %
+                self.ROOT_NAMESPACE_NAME)
 
 
 class NamespaceClientManager(RootNsClientManager):
@@ -280,13 +393,35 @@ class NamespaceClientManager(RootNsClientManager):
         self._ns_full_path = self.NAMESPACE_PATH + self._ns
 
     def start_client(self, src):
-        process = WorkerProcess(TrafficClient, (src, self._clients), {})
-        with Namespace(self._ns_full_path, 'net'):
-            process.start()
-        self._client_registry.add_client(self.ROOT_NAMESPACE_NAME, process)
-
-    def stop_client(self, src):
-        client = self._client_registry.get_client(self.ROOT_NAMESPACE_NAME)
-        if client:
+        client = self._client_registry.get_client(self._ns)
+        if client and client.is_running():
+            self.log.warning("Client is already running on %s" % src)
+            return
+        try:
+            process = WorkerProcess(
+                TrafficClient, (src, self._clients), {})
             with Namespace(self._ns_full_path, 'net'):
-                client.stop()
+                process.start()
+                self._client_registry.add_client(self._ns, process)
+        except Exception as e:
+            self.log.exception(
+                "Starting client process on interface %s failed" % src)
+            raise e
+
+    def stop_client(self):
+        try:
+            client = self._client_registry.get_client(self._ns)
+            if client and client.is_running():
+                with Namespace(self._ns_full_path, 'net'):
+                    client.stop()
+                    self._client_registry.remove_client(self._ns)
+            elif client and not client.is_running():
+                self.log.warning("Client is not running in namespace %s" %
+                                 self._ns)
+                self._client_registry.remove_client(self._ns)
+            else:
+                self.log.warning("Client is not running in namespace %s" %
+                                 self._ns)
+        except Exception as e:
+            self.log.exception("Stopping client failed in namespace %s" %
+                               self._ns)

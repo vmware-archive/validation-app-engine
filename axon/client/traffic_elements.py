@@ -123,13 +123,23 @@ class Action(object):
     DROP = 0
     ALLOW = 1
 
-    allowed = ['DROP', 'ALLOW']
+    allowed = [DROP, ALLOW]
+
+
+class Connected(object):
+    """
+    This class tell whether two endpoints are connected or not
+    """
+    CONNECTED = True
+    DISCONNECTED = False
+
+    allowed = [CONNECTED, DISCONNECTED]
 
 
 class TrafficRule(object):
 
     def __init__(self, src, dst, port, protocol=Protocol.TCP,
-                 action=Action.ALLOW):
+                 connected=Connected.CONNECTED, action=Action.ALLOW):
         """
         This class captures the notion of Traffic Rule or Traffic Command for
         the Traffic Controller system. A Traffic rule/command can specify :
@@ -147,7 +157,8 @@ class TrafficRule(object):
             assert(isinstance(dst, Endpoint))
             assert(isinstance(port, Port))
 
-            assert(action < len(Action.allowed))
+            assert(action in Action.allowed)
+            assert (connected in Connected.allowed)
             assert(protocol in Protocol.allowed)
 
             self.src_eps = src
@@ -155,6 +166,7 @@ class TrafficRule(object):
             self.protocol = protocol
             self.port = port
             self.action = action
+            self.connected = connected
 
         except Exception as err:
             raise InvalidRuleError(err)
