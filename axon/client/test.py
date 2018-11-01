@@ -1,3 +1,5 @@
+import time
+
 from axon.client.traffic_elements import TrafficRule, \
     Endpoint, Port, Protocol, Action
 from axon.client.cloud_traffic_controller import CloudTrafficController
@@ -20,10 +22,9 @@ for index, host in enumerate(hosts):
 
         )
 
-import time
 start = time.time()
 controller = CloudTrafficController(gateway_host='10.59.84.167')
 controller.register_traffic(rule_list)
 controller.start_traffic()
 end = time.time()
-print "Total %s" % (end-start)
+print "Total %s" % (end - start)

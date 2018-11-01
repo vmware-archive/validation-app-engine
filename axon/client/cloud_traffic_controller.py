@@ -41,7 +41,7 @@ class CloudTrafficController(TrafficController):
                 trule.protocol, trule.port.port,
                 dst, bool(trule.action))
         for server, rule in self._servers.items():
-            print "pushing on server %s" %server
+            print "pushing on server %s" % server
             with AxonClient(server, proxy_host=self._gw_host) as client:
                 client.traffic.register_traffic([rule.as_dict()])
 

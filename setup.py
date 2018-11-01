@@ -12,7 +12,7 @@ except ImportError:
 
 console_mapper = {
     'posix': 'axon_service = axon.controller.rpyc_controller:main',
-    'nt': 'axon_service = axon.controller.windows.rpyc_win_service:main'
+    'nt': 'axon_service = axon.controller.windows.axon_service:main'
 }
 
 
