@@ -1,57 +1,24 @@
+import contextlib
 import os
 
 from fabric import Connection
-from functools import wraps
-
-# These can be removed when password less is working
-remote_password = 'VMware@123'
-gateway_password = "!cisco"
-
-
-def fab_remote_connector(func):
-    """
-    Fabic Connection decorator to create remote connection (via gateway
-    if required) and executes remote commands.
-    :param func:
-    :return: wrapper method
-    """
-    @wraps(func)
-    def wrapped(*args, **kwargs):
-        try:
-            (gw_host, gw_user, remote_host,
-             remote_user, remote_cmd) = func(*args, **kwargs)
-            gateway = None
-            if gw_host:
-                gateway = Connection(
-                    gw_host,
-                    user=gw_user,
-                    connect_kwargs={"password": gateway_password})
-            with Connection(remote_host, user=remote_user,
-                            gateway=gateway,
-                            connect_kwargs={"password": remote_password})\
-                    as conn:
-                    print("remote_cmd", remote_cmd)
-                    conn.run(remote_cmd)
-        except Exception as e:
-            raise RuntimeError(e)
-        else:
-            print("Operation Successful.")
-    return wrapped
 
 
 class AxonRemoteOperation(object):
     """
     Base class for all Axon(Windows/Linux) operations.
     """
-    def __init__(self, remote_host, remote_user=None,
-                 gw_host=None, gw_user=None,
+    def __init__(self, remote_host, remote_user=None, remote_password=None,
+                 gw_host=None, gw_user=None, gw_password=None,
                  pypi_server=None, pypi_server_port=None):
         """
         :param remote_host: Remote host where operation is needs to
                             be performed.
         :param remote_user: Remote host username to connect with.
+        :param remote_user: Remote host password to connect with..
         :param gw_host: Gateway host
         :param gw_user: Gateway username
+        :param gw_user: Gateway password
         :param pypi_server: Pypi server IP
         :param pypi_server_port: Pypi server port
         """
@@ -62,22 +29,75 @@ class AxonRemoteOperation(object):
         self.pypi_server = pypi_server
         self.pypi_server_port = pypi_server_port
         self.pip_map = {'posix': 'pip', 'nt': 'pip.exe'}
+        self.connect_kwargs_remote = {}
+        self.connect_kwargs_gateway = {}
+        if remote_password:
+            self.connect_kwargs_remote = {"password": remote_password}
+        if gw_password:
+            self.connect_kwargs_gateway = {"password": gw_password}
 
-    @fab_remote_connector
-    def remote_install_pypi(self, pypi_package):
+    @contextlib.contextmanager
+    def remote_connection(self):
+        """
+        Remote connection context manager
+        """
+        gateway = None
+        if self._gw_host:
+            gateway = Connection(
+                self._gw_host,
+                user=self._gw_user,
+                connect_kwargs=self.connect_kwargs_gateway)
+        conn = Connection(self._host, user=self._username,
+                          gateway=gateway,
+                          connect_kwargs=self.connect_kwargs_remote)
+        try:
+            yield conn
+        finally:
+            conn.close()
+
+    def remote_run_command(self, remote_cmd):
+        """
+        Run given command on remote machine
+        :param remote_cmd: remote commmand to run
+        :return: Operation success
+        """
+        with self.remote_connection() as conn:
+            if isinstance(remote_cmd, str):
+                conn.run(remote_cmd)
+            elif isinstance(remote_cmd, list):
+                for cmd in remote_cmd:
+                    conn.run(remote_cmd)
+
+    def remote_put_file(self, source, dest=None):
+        """
+        Copy source file to remote machine
+        :param source: source file full path
+        :param dest: destination location to copy
+        :return: Operation success
+        """
+        # Observation: dest doesn't work in Windows
+        with self.remote_connection() as conn:
+            if dest:
+                conn.put(source, dest)
+            else:
+                conn.put(source)
+
+    def remote_install_pypi(self, pypi_package, remote_os_name='posix'):
         """
         Remotely install given pypi package
         :param pypi_package: pypi package name i.e. 'vmware-axon'
         :return: Operation success
         """
-        install_cmd = "%s install %s --trusted-host %s "\
-            "--extra-index-url http://%s:%s" % (
-                self.pip_map[os.name], pypi_package, self.pypi_server,
-                self.pypi_server, self.pypi_server_port)
-        return (self._gw_host, self._gw_user,
-                self._host, self._username, install_cmd)
+        install_cmd = ("%s install %s" % (
+                       self.pip_map[remote_os_name], pypi_package))
+        if self.pypi_server and self.pypi_server_port:
+            install_cmd = (install_cmd + " --trusted-host %s "
+                           "--extra-index-url http://%s:%s" % (
+                               self.pypi_server,
+                               self.pypi_server,
+                               self.pypi_server_port))
+        self.remote_run_command(install_cmd)
 
-    @fab_remote_connector
     def remote_uninstall_pypi(self, pypi_package):
         """
         Remotely uninstall given pypi package
@@ -86,8 +106,7 @@ class AxonRemoteOperation(object):
         """
         uninstall_cmd = "%s uninstall -y %s" % (
             self.pip_map[os.name], pypi_package)
-        return (self._gw_host, self._gw_user,
-                self._host, self._username, uninstall_cmd)
+        self.remote_run_command(uninstall_cmd)
 
 
 class AxonRemoteOperationWindows(AxonRemoteOperation):
@@ -134,82 +153,103 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
         At a time only one of above procedure needs to be followed.
 
     """
-
-    def remote_install_exe(self, exe_package_path, python_folder='Python27'):
+    def remote_install_sdist(self, sdist_package_path,
+                             python_folder='Python27'):
         """
         Remotely upload previously created axon_service.exe from local host
         to remote host.
-        :param exe_package_path:
-        :param python_folder:
+        :param sdist_package_path: python sdist tar.gz package
+
+             This is created using -
+               # python setup.py sdist
+             This will create a tar.gz file in axon/dist/ directory
+             wit same something like vmware-axon*
+
+        :param python_folder: Python27 or Python34 etc
         :return: None
         """
-        gateway = None
-        if self._gw_host:
-            gateway = Connection(
-                self._gw_host, user=self._gw_user,
-                connect_kwargs={"password": gateway_password})
-        with Connection(self._host,
-                        user=self._username,
-                        gateway=gateway,
-                        connect_kwargs={"password": remote_password}) as conn:
-            # This will copy file from source to remote's HOME folder
-            conn.put(exe_package_path)
+        filename = os.path.basename(sdist_package_path)
+        with self.remote_connection() as conn:
+            # In case service is already running, we have to stop that
+            # TODO(raies): Need to implement in clean way later
+            try:
+                self.remote_stop_axon()
+            except Exception:
+                pass
+            conn.put(sdist_package_path)
+            install_cmd = 'pip.exe install C:\\%homepath%\\' + filename
+            conn.run(install_cmd)
 
-            source = '%homepath%' + '\\' + 'axon_service.exe'
-            # Destination must be Python's Scripts path
-            destination = "C:\%s\Scripts" % python_folder
-            copy_cmd = 'cp %s %s' % (source, destination)
-            conn.run(copy_cmd)
+    def remote_install_requirements(self, requirement_file,
+                                    python_dir='Python27'):
+        """
+        Remotely uninstall given pypi packages from a requirement file
+        :param pypi package name i.e. 'vmware-axon'
+        :return: Operation success
+        """
+        # Set env vars with separate connection to make it effective
+        homepath = 'setx /M Path "\%Path\%; C:\\%homepath%"'
+        self.remote_run_command(homepath)
 
-    @fab_remote_connector
+        with self.remote_connection() as conn:
+            pre_packages = ["certifi", "pywin32"]
+            for pre_package in pre_packages:
+                run_pre_cmd = "pip.exe install %s" % pre_package
+                conn.run(run_pre_cmd)
+
+            filename = os.path.basename(requirement_file)
+            conn.put(requirement_file)
+            dest_file = 'C:\\%homepath%\\' + filename
+            install_cmd = "pip.exe install -r %s" % dest_file
+            if self.pypi_server and self.pypi_server_port:
+                install_cmd = (install_cmd + " --trusted-host %s "
+                               "--extra-index-url http://%s:%s" % (
+                                   self.pypi_server,
+                                   self.pypi_server,
+                                   self.pypi_server_port))
+            conn.run(install_cmd)
+
     def remote_register_axon(self, axon_exe='axon_service.exe'):
         """
         Remotely register axon as a service
         :return: Operation success
         """
         register_cmd = "%s install" % axon_exe
-        return (self._gw_host, self._gw_user,
-                self._host, self._username, register_cmd)
+        self.remote_run_command(register_cmd)
 
-    @fab_remote_connector
     def remote_start_axon(self, axon_exe='axon_service.exe'):
         """
         Remotely start axon service
         :return: Operation success
         """
         start_cmd = "%s start" % axon_exe
-        return (self._gw_host, self._gw_user,
-                self._host, self._username, start_cmd)
+        with self.remote_connection() as conn:
+            conn.run('if not exist "C:\\axon" mkdir C:\\axon')
+            conn.run(start_cmd)
 
-    @fab_remote_connector
     def remote_stop_axon(self, axon_exe='axon_service.exe'):
         """
         Remotely stop axon service
         :return: Operation success
         """
         stop_cmd = "%s stop" % axon_exe
-        return (self._gw_host, self._gw_user,
-                self._host, self._username, stop_cmd)
+        self.remote_run_command(stop_cmd)
 
-    @fab_remote_connector
     def remote_restart_axon(self, axon_exe='axon_service.exe'):
         """
         Remotely restart axon service
         :return: Operation success
         """
         restart_cmd = "%s restart" % axon_exe
-        return (self._gw_host, self._gw_user,
-                self._host, self._username, restart_cmd)
+        self.remote_run_command(restart_cmd)
 
-    @fab_remote_connector
     def remote_unregister_axon(self, axon_exe='axon_service.exe'):
         """
         Remotely unregister axon service
         :return: Operation success
         """
         remove_cmd = "%s remove" % axon_exe
-        return (self._gw_host, self._gw_user,
-                self._host, self._username, remove_cmd)
+        self.remote_run_command(remove_cmd)
 
 
 class AxonRemoteOperationLinux(AxonRemoteOperation):
@@ -221,6 +261,51 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
         - Stops axon service remotely.
         - Restart axon service remotely.
     """
+    def remote_install_sdist(self, sdist_package_path,
+                             python_folder='Python27'):
+        """
+        Remotely upload previously created axon_service.exe from local host
+        to remote host.
+        :param sdist_package_path: python sdist tar.gz package
+        :param python_folder: Python27 or Python34 etc
+        :return: None
+        """
+        filename = os.path.basename(sdist_package_path)
+        with self.remote_connection() as conn:
+            # In case service is already running, we have to stop that
+            # TODO(raies): Need to implement in clean way later
+            try:
+                self.remote_stop_axon()
+            except Exception:
+                pass
+            conn.put(sdist_package_path, '/tmp')
+            install_cmd = 'pip install /tmp/' + filename
+            conn.run(install_cmd)
+
+    def remote_install_requirements(self, requirement_file, dest="/tmp/"):
+        """
+        Remotely uninstall given pypi packages from a requirement file
+        :param pypi package name i.e. 'vmware-axon'
+        :return: Operation success
+        """
+        with self.remote_connection() as conn:
+            pre_packages = ["certifi"]
+            for pre_package in pre_packages:
+                run_pre_cmd = "pip install %s" % pre_package
+                conn.run(run_pre_cmd)
+
+            filename = os.path.basename(requirement_file)
+            conn.put(requirement_file, dest)
+            dest_file = dest + "/" + filename
+            install_cmd = "pip install -r %s" % dest_file
+            if self.pypi_server and self.pypi_server_port:
+                install_cmd = (install_cmd + " --trusted-host %s "
+                               "--extra-index-url http://%s:%s" % (
+                                   self.pypi_server,
+                                   self.pypi_server,
+                                   self.pypi_server_port))
+            conn.run(install_cmd)
+
     def remote_install_debian(self, deb_package_path):
         """
         Remotely upload previously created axon deb from local host
@@ -230,102 +315,59 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
         :return: None
         """
         filename = os.path.basename(deb_package_path)
-        gateway = None
-        if self._gw_host:
-            gateway = Connection(self._gw_host,
-                                 user=self._gw_user,
-                                 connect_kwargs={"password": gateway_password})
-        with Connection(self._host,
-                        user=self._username,
-                        gateway=gateway,
-                        connect_kwargs={"password": remote_password}) as conn:
+        with self.remote_connection() as conn:
             conn.put(deb_package_path, '/tmp')
             conn.run('cd /tmp/ && sudo dpkg -i %s' % filename)
 
-    @fab_remote_connector
     def remote_reload_daemon(self):
         """
         Remotely reload daemon.
         :return: None
         """
-        reload_cmd = "systemctl daemon-reload"
-        return (self._gw_host, self._gw_user,
-                self._host, self._username, reload_cmd)
+        reload_cmd = "sudo systemctl daemon-reload"
+        self.remote_run_command(reload_cmd)
+        with self.remote_connection() as conn:
+            conn.run(reload_cmd)
 
-    @fab_remote_connector
     def remote_start_axon(self):
         """
         Remotely start axon service.
         :return: None
         """
-        start_cmd = "systemctl start axon"
-        return (self._gw_host, self._gw_user,
-                self._host, self._username, start_cmd)
+        start_cmd = "sudo systemctl start axon"
+        self.remote_run_command(start_cmd)
 
-    @fab_remote_connector
     def remote_stop_axon(self):
         """
         Remotely stop axon service.
         :return: None
         """
-        stop_cmd = "systemctl stop axon"
-        return (self._gw_host, self._gw_user,
-                self._host, self._username, stop_cmd)
+        stop_cmd = "sudo systemctl stop axon"
+        self.remote_run_command(stop_cmd)
 
-    @fab_remote_connector
     def remote_restart_axon(self):
         """
         Remotely restart axon service.
         :return: None
         """
-        restart_cmd = "systemctl restart axon"
-        return (self._gw_host, self._gw_user,
-                self._host, self._username, restart_cmd)
+        restart_cmd = "sudo systemctl restart axon"
+        self.remote_run_command(restart_cmd)
 
-    @fab_remote_connector
     def remote_status_axon(self):
         """
         Remotely status axon service.
         :return: None
         """
-        status_cmd = "systemctl status axon"
-        return (self._gw_host, self._gw_user,
-                self._host, self._username, status_cmd)
+        status_cmd = "sudo systemctl status axon"
+        self.remote_run_command(status_cmd)
 
 
 if __name__ == "__main__":
-    """
-    Assumption:
-      For method 1 windows :
-        - pypi server is running on given pypi server ip and port
-        - pip package is present on pypi server(s)
-    """
-    axn = AxonRemoteOperationWindows('10.112.156.43',
-                                     remote_user='raies',
-                                     pypi_server='10.172.51.73',
-                                     pypi_server_port=9000)
-    # Method 1 Windows -
-    # pywin32 must be installed for axon operations on windows
-    for package in ['pywin32', 'vmware-axon']:
-        axn.remote_install_pypi(package)
+    remote_password = "Admin!Admin1998"
+    axn = AxonRemoteOperationLinux('15.27.10.161',
+                                   remote_user='ubuntu',
+                                   gw_host='10.59.84.202',
+                                   gw_user='ubuntu',
+                                   remote_password=remote_password)
 
-    # or Method 2 Windows - (Use only method 1 or method 2)
-    # axn.remote_install_exe('/tmp/axon_service.exe')
-    import time
-    axn.remote_register_axon()
-    time.sleep(2)
-    axn.remote_start_axon()
-    time.sleep(2)
-    axn.remote_stop_axon()
-    time.sleep(2)
-    axn.remote_unregister_axon()
-    time.sleep(2)
-    axn.remote_uninstall_pypi('vmware-axon')
-    time.sleep(2)
-
-
-    def install(host):
-        installer = AxonRemoteOperationLinux(
-            host, remote_user='ubuntu',
-            gw_host='10.59.84.167', gw_user='ubuntu')
-        installer.remote_install_debian('/root/axon/debian/dist/test_axon.deb')
+    axn.remote_run_command('pip install pip --upgrade')

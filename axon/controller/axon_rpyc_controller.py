@@ -71,7 +71,6 @@ class AxonController(object):
     def __init__(self):
         self.axon_port = conf.AXON_PORT
         self.service = AxonService()
-        self.service.daemon = True
         self.protocol_config = self.service.RPYC_PROTOCOL_CONFIG
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.WARN)
