@@ -179,3 +179,8 @@ class InterfaceManager(object):
             return interface.as_dict()
         else:
             return None
+
+    def get_interface_by_ip(self, ip):
+        for name, interface in self._interface_map.items():
+            if interface.address == ip:
+                return name

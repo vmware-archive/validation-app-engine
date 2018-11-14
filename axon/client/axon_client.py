@@ -10,8 +10,8 @@ class Manager(object):
 
 class TrafficManger(Manager):
 
-    def add_server(self, protocol, port, namespace=None):
-        self._client.traffic.add_server(protocol, port, namespace)
+    def add_server(self, protocol, port, endpoint, namespace=None):
+        self._client.traffic.add_server(protocol, port, endpoint, namespace)
 
     def start_clients(self):
         self._client.traffic.start_clients()

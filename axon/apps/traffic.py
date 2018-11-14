@@ -18,24 +18,20 @@ class TrafficApp(object):
         namespaces = NamespaceManager().get_all_namespaces()
         if namespaces and self._conf.NAMESPACE_MODE:
             self.namespace_mode = True
-            self._server_agent = AxonNameSpaceServerAgent(
-                primary_if_name=self._conf.PRIMARY_IFACE_NAME)
-            self._client_agent = AxonNameSpaceClientAgent(
-                primary_if_name=self._conf.PRIMARY_IFACE_NAME)
+            self._server_agent = AxonNameSpaceServerAgent()
+            self._client_agent = AxonNameSpaceClientAgent()
         else:
             self.namespace_mode = False
-            self._server_agent = AxonRootNamespaceServerAgent(
-                primary_if_name=self._conf.PRIMARY_IFACE_NAME)
-            self._client_agent = AxonRootNamespaceClientAgent(
-                primary_if_name=self._conf.PRIMARY_IFACE_NAME)
+            self._server_agent = AxonRootNamespaceServerAgent()
+            self._client_agent = AxonRootNamespaceClientAgent()
 
-    def add_server(self, protocol, port, namespace=None):
+    def add_server(self, protocol, port, endpoint, namespace=None):
         if not self.namespace_mode and namespace:
             raise ValueError(
                 "namespace parameter must not be provided,"
                 "as the Axon is running in non namespace mode")
         self.log.info("Add %s Server on port %s started" % (protocol, port))
-        self._server_agent.add_server(port, protocol, namespace)
+        self._server_agent.add_server(port, protocol, endpoint, namespace)
 
     def register_traffic(self, traffic_configs):
         self.log.info("Register traffic called with config %s" %
