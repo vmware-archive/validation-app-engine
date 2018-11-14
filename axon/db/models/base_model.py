@@ -180,7 +180,7 @@ class Record(object):
         """
         path = '/buckets'
         if self.usetype:
-            path = os.path.join('/types', self.bucketname, 'buckets')
+            path = '/'.join(['/types', self.bucketname, 'buckets'])
         if self.key is None:
             return self.create_cls(
                 bucket=self.bucketname,
@@ -206,7 +206,7 @@ class Record(object):
         """
         path = '/buckets'
         if self.usetype:
-            path = os.path.join('/types', self.bucketname, 'buckets')
+            path = '/'.join(['/types', self.bucketname, 'buckets'])
         return self.delete_cls(bucket=self.bucketname, key=self.key, path=path)
 
     @classmethod
@@ -233,7 +233,7 @@ class Record(object):
         """
         path = '/buckets'
         if self.usetype:
-            path = os.path.join('/types', self.bucketname, 'buckets')
+            path = '/'.join(['/types', self.bucketname, 'buckets'])
         return riak_datatypes.GetJSONObject(
             bucket=self.bucketname, key=self.key, path=path)
 

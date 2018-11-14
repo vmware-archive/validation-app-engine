@@ -7,20 +7,20 @@ from axon.client.cloud_traffic_controller import CloudTrafficController
 
 rule_list = list()
 rule_list.append(
-    TrafficRule(Endpoint('15.27.10.161'), Endpoint('15.27.10.244'),
+    TrafficRule(Endpoint('10.172.50.40'), Endpoint('10.172.50.40'),
                 Port(12345), Protocol.TCP, Connected.CONNECTED,
                 Action.ALLOW)
 )
 
 rule_list.append(
-    TrafficRule(Endpoint('15.27.10.244'), Endpoint('15.27.10.161'),
-                Port(12345), Protocol.TCP, Connected.CONNECTED,
+    TrafficRule(Endpoint('10.172.50.40'), Endpoint('10.172.50.40'),
+                Port(12345), Protocol.UDP, Connected.CONNECTED,
                 Action.ALLOW)
 )
 
 start = time.time()
 print rule_list
-controller = CloudTrafficController(gateway_host='10.59.84.202')
+controller = CloudTrafficController()
 controller.register_traffic(rule_list)
 controller.stop_traffic()
 controller.start_traffic()

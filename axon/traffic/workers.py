@@ -2,6 +2,7 @@ import abc
 import multiprocessing as mp
 from threading import Thread
 import six
+import logging
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -40,6 +41,7 @@ class WorkerThread(Thread, Worker):
     """
     Run A Server/Client Inside a thread
     """
+    _log = logging.getLogger(__name__)
 
     def __init__(self, traffic_class, args=(), kwargs=None):
         super(WorkerThread, self).__init__()
@@ -49,9 +51,18 @@ class WorkerThread(Thread, Worker):
         self.__traffic_obj = None
 
     def run(self):
-        self.__traffic_obj = self._traffic_class(
-            *self.__class_args, **self.__class_kwargs)
-        self.__traffic_obj.run()
+        try:
+            self._log.info("Starting thread with args %s %s %s" %
+                           (self.__traffic_class, self.__class_args,
+                            self.__class_kwargs))
+            self.__traffic_obj = self._traffic_class(
+                *self.__class_args, **self.__class_kwargs)
+            self.__traffic_obj.run()
+        except Exception:
+            self._log.exception("Exception happened during starting Thread"
+                                " with args %s %s %s" %
+                                (self.__traffic_class, self.__class_args,
+                                 self.__class_kwargs))
 
     def stop(self):
         self.__traffic_obj.stop()
@@ -64,6 +75,7 @@ class WorkerProcess(mp.Process, Worker):
     """
     Run a server/Client inside a process
     """
+    _log = logging.getLogger(__name__)
 
     def __init__(self, traffic_class, args=(), kwargs=None):
         super(WorkerProcess, self).__init__()
@@ -73,9 +85,19 @@ class WorkerProcess(mp.Process, Worker):
         self.__traffic_obj = None
 
     def run(self):
-        self.__traffic_obj = self.__traffic_class(
-            *self.__class_args, **self.__class_kwargs)
-        self.__traffic_obj.run()
+        try:
+            self._log.info("Starting Process with args %s %s %s" %
+                           (self.__traffic_class, self.__class_args,
+                            self.__class_kwargs))
+            self.__traffic_obj = self.__traffic_class(
+                *self.__class_args, **self.__class_kwargs)
+            self.__traffic_obj.run()
+        except Exception:
+            self._log.exception("Exception happened during starting Process"
+                                " with args %s %s %s" %
+                                (self.__traffic_class, self.__class_args,
+
+                                 self.__class_kwargs))
 
     def stop(self):
         self.terminate()

@@ -85,6 +85,7 @@ class TrafficRecord(Base):
     success = Column(Boolean(), default=True)
     type = Column(String(10))
     created = Column(Float())
+    connected = Column(Boolean())
 
     FIELDS = {
         'id': str,

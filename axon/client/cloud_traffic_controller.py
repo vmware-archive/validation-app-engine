@@ -89,42 +89,54 @@ class CloudTrafficController(TrafficController):
     def unregister_traffic(self, traffic_config):
         pass
 
-    def __stop_clients(self):
+    def __stop_clients(self, servers):
+        servers = servers if servers else self._servers.keys()
+        if not servers:
+            return
         pool = ThreadPool(50)
-        params = [(server, self._gw_host) for server in self._servers.keys()]
+        params = [(server, self._gw_host) for server in servers]
         pool.map(stop_clients, params)
         pool.close()
         pool.join()
 
-    def __stop_servers(self):
+    def __stop_servers(self, servers):
+        servers = servers if servers else self._servers.keys()
+        if not servers:
+            return
         pool = ThreadPool(50)
-        params = [(server, self._gw_host) for server in self._servers.keys()]
+        params = [(server, self._gw_host) for server in servers]
         pool.map(stop_servers, params)
         pool.close()
         pool.join()
 
-    def __start_servers(self):
+    def __start_servers(self, servers):
+        servers = servers if servers else self._servers.keys()
+        if not servers:
+            return
         pool = ThreadPool(50)
-        params = [(server, self._gw_host) for server in self._servers.keys()]
+        params = [(server, self._gw_host) for server in servers]
         pool.map(start_servers, params)
         pool.close()
         pool.join()
 
-    def __start_clients(self):
+    def __start_clients(self, servers):
+        servers = servers if servers else self._servers.keys()
+        if not servers:
+            return
         pool = ThreadPool(50)
-        params = [(server, self._gw_host) for server in self._servers.keys()]
+        params = [(server, self._gw_host) for server in servers]
         pool.map(start_clients, params)
         pool.close()
         pool.join()
 
-    def stop_traffic(self):
-        self.__stop_clients()
-        self.__stop_servers()
+    def stop_traffic(self, servers=None):
+        self.__stop_clients(servers)
+        self.__stop_servers(servers)
 
-    def start_traffic(self):
-        self.__start_servers()
-        self.__start_clients()
+    def start_traffic(self, servers=None):
+        self.__start_servers(servers)
+        self.__start_clients(servers)
 
-    def restart_traffic(self):
-        self.stop_traffic()
-        self.start_traffic()
+    def restart_traffic(self, servers=None):
+        self.stop_traffic(servers)
+        self.start_traffic(servers)

@@ -229,7 +229,8 @@ def build_link_query_path(self, value):
         ','.join((lreq.bucket, lreq.tag, lreq.keep))
         for lreq in self.link_requests
     ]
-    return os.path.join(base_path, *link_paths)
+    full_path = [base_path] + link_paths
+    return '/'.join(full_path)
 
 
 def to_solr_query(self, value):
@@ -391,7 +392,7 @@ def from_solr_query(value):
         The query string
     """
     # avoid circular imports
-    import database.backends.riak.riak_datatypes as riak_datatypes
+    import axon.db.backends.riak.riak_datatypes as riak_datatypes
     tokens = collections.deque(value.split(' '))
     qdef = root = riak_datatypes.QuerySpec(left=None, right=None)
     while tokens:
@@ -438,7 +439,7 @@ def input_map_formatter(value):
         The map value
     """
     ret_val = []
-    import database.backends.riak.riak_datatypes as riak_datatypes
+    import axon.db.backends.riak.riak_datatypes as riak_datatypes
     type_cls_set = set([
         (riak_datatypes.Counter,
             lambda inst, v: setattr(
@@ -474,7 +475,7 @@ def reverse_update(value):
         The map value
     """
     ret_val = []
-    import database.backends.riak.riak_datatypes as riak_datatypes
+    import axon.db.backends.riak.riak_datatypes as riak_datatypes
     type_cls_set = set([
         (riak_datatypes.Counter,
             lambda inst, v: setattr(
@@ -565,7 +566,7 @@ def _append_path_elem_to_instance(path_attrs, self, value):
         if attr is None:
             attr = path_attr
         path_components.append(urllib.parse.quote(attr, safe='?='))
-    return os.path.join(*path_components)
+    return '/'.join(path_components)
 
 
 def append_path_elem(attrs):

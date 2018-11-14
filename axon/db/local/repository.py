@@ -58,20 +58,20 @@ class Repositories(object):
         self.connected_state = ConnectedStateRepository()
 
     def create_record(self, session, **traffic_dict):
-        with session.begin(subtransactions=True):
-            if not traffic_dict.get('id'):
-                traffic_dict['id'] = str(uuid.uuid4())
-            record = models.TrafficRecord(**traffic_dict)
-            session.add(record)
-            return self.record.get(session, id=record.id)
+        if not traffic_dict.get('id'):
+            traffic_dict['id'] = str(uuid.uuid4())
+        record = models.TrafficRecord(**traffic_dict)
+        session.add(record)
+        session.commit()
+        return self.record.get(session, id=record.id)
 
     def create_connected_state(self, session, **cs_dict):
-        with session.begin(subtransactions=True):
-            if not cs_dict.get('id'):
-                cs_dict['id'] = str(uuid.uuid4())
-            record = models.ConnectedState(**cs_dict)
-            session.add(record)
-            return self.connected_state.get(session, id=record.id)
+        if not cs_dict.get('id'):
+            cs_dict['id'] = str(uuid.uuid4())
+        record = models.ConnectedState(**cs_dict)
+        session.add(record)
+        session.commit()
+        return self.connected_state.get(session, id=record.id)
 
 
 class ConnectedStateRepository(BaseRepository):

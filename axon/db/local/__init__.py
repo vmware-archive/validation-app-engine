@@ -11,7 +11,7 @@ def get_engine(uri):
 if os.name == "posix":
    DB_URL = "sqlite:////opt/axon/traffic.db"
 else:
-   DB_URL = "sqlite:///C:\axon\\traffic.db"
+   DB_URL = "sqlite:///C:\\axon\\traffic.db"
 
 
 DATABASE_URL = os.getenv('DATABASE_URL', DB_URL)
