@@ -153,8 +153,7 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
         At a time only one of above procedure needs to be followed.
 
     """
-    def remote_install_sdist(self, sdist_package_path,
-                             python_folder='Python27'):
+    def remote_install_sdist(self, sdist_package_path):
         """
         Remotely upload previously created axon_service.exe from local host
         to remote host.
@@ -164,12 +163,11 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
                # python setup.py sdist
              This will create a tar.gz file in axon/dist/ directory
              wit same something like vmware-axon*
-
-        :param python_folder: Python27 or Python34 etc
         :return: None
         """
         filename = os.path.basename(sdist_package_path)
         with self.remote_connection() as conn:
+            conn.run('pip.exe install pywin32')
             # In case service is already running, we have to stop that
             # TODO(raies): Need to implement in clean way later
             try:
@@ -180,19 +178,14 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
             install_cmd = 'pip.exe install C:\\%homepath%\\' + filename
             conn.run(install_cmd)
 
-    def remote_install_requirements(self, requirement_file,
-                                    python_dir='Python27'):
+    def remote_install_requirements(self, requirement_file):
         """
         Remotely uninstall given pypi packages from a requirement file
         :param pypi package name i.e. 'vmware-axon'
         :return: Operation success
         """
-        # Set env vars with separate connection to make it effective
-        homepath = 'setx /M Path "\%Path\%; C:\\%homepath%"'
-        self.remote_run_command(homepath)
-
         with self.remote_connection() as conn:
-            pre_packages = ["certifi", "pywin32"]
+            pre_packages = ["pywin32"]
             for pre_package in pre_packages:
                 run_pre_cmd = "pip.exe install %s" % pre_package
                 conn.run(run_pre_cmd)
@@ -214,7 +207,7 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
         Remotely register axon as a service
         :return: Operation success
         """
-        register_cmd = "%s install" % axon_exe
+        register_cmd = "%s --startup auto install" % axon_exe
         self.remote_run_command(register_cmd)
 
     def remote_start_axon(self, axon_exe='axon_service.exe'):
@@ -261,13 +254,11 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
         - Stops axon service remotely.
         - Restart axon service remotely.
     """
-    def remote_install_sdist(self, sdist_package_path,
-                             python_folder='Python27'):
+    def remote_install_sdist(self, sdist_package_path):
         """
         Remotely upload previously created axon_service.exe from local host
         to remote host.
         :param sdist_package_path: python sdist tar.gz package
-        :param python_folder: Python27 or Python34 etc
         :return: None
         """
         filename = os.path.basename(sdist_package_path)
@@ -279,25 +270,25 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
             except Exception:
                 pass
             conn.put(sdist_package_path, '/tmp')
-            install_cmd = 'pip install /tmp/' + filename
+            install_cmd = 'sudo -H pip install /tmp/' + filename
             conn.run(install_cmd)
 
-    def remote_install_requirements(self, requirement_file, dest="/tmp/"):
+    def remote_install_requirements(self, requirement_file, dest="/tmp"):
         """
         Remotely uninstall given pypi packages from a requirement file
         :param pypi package name i.e. 'vmware-axon'
         :return: Operation success
         """
         with self.remote_connection() as conn:
-            pre_packages = ["certifi"]
-            for pre_package in pre_packages:
-                run_pre_cmd = "pip install %s" % pre_package
-                conn.run(run_pre_cmd)
+            # Prerequirements
+            conn.run('sudo apt-get install python-setuptools -y --force-yes')
+            conn.run('sudo apt-get install python-pip -y')
+            conn.run('sudo -H pip install --upgrade pip setuptools')
 
             filename = os.path.basename(requirement_file)
             conn.put(requirement_file, dest)
             dest_file = dest + "/" + filename
-            install_cmd = "pip install -r %s" % dest_file
+            install_cmd = "sudo -H pip install -r %s" % dest_file
             if self.pypi_server and self.pypi_server_port:
                 install_cmd = (install_cmd + " --trusted-host %s "
                                "--extra-index-url http://%s:%s" % (
@@ -306,18 +297,29 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
                                    self.pypi_server_port))
             conn.run(install_cmd)
 
-    def remote_install_debian(self, deb_package_path):
+    def remote_install_distribution(self, distribuion_package_path):
         """
         Remotely upload previously created axon deb from local host
         to remote host.
-        :param deb_package_path: Full path of debian package
-               i.e. '/tmp/test_axon.deb'
+        :param distribuion_package_path: Full path of distribution package
+               i.e. '/tmp/test_axon.deb' or /tmp/test_axon.rpm
         :return: None
         """
-        filename = os.path.basename(deb_package_path)
+        filename = os.path.basename(distribuion_package_path)
+
+        # Derive os_type from installer package itself
+        # <name>.'deb' -> debian based package
+        # <name>.rpm -> rpm based package
+        _installer_type = distribuion_package_path.split('.')[1]
         with self.remote_connection() as conn:
-            conn.put(deb_package_path, '/tmp')
-            conn.run('cd /tmp/ && sudo dpkg -i %s' % filename)
+            conn.put(distribuion_package_path, '/tmp')
+
+            if _installer_type == 'deb':
+                conn.run('cd /tmp/ && sudo dpkg -i %s' % filename)
+            elif _installer_type == 'rpm':
+                conn.run('cd /tmp/ && sudo rpm -u %s' % filename)
+            else:
+                raise RuntimeError("No valid dist (.rpm or .deb) found.")
 
     def remote_reload_daemon(self):
         """
@@ -364,10 +366,28 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
 
 if __name__ == "__main__":
     remote_password = "Admin!Admin1998"
-    axn = AxonRemoteOperationLinux('15.27.10.161',
-                                   remote_user='ubuntu',
-                                   gw_host='10.59.84.202',
-                                   gw_user='ubuntu',
-                                   remote_password=remote_password)
+    axn_linux = AxonRemoteOperationLinux('10.59.88.103',
+                                         remote_user='ubuntu',
+#                                         gw_host='10.59.84.202',
+#                                         gw_user='ubuntu',
+                                         remote_password=remote_password)
 
-    axn.remote_run_command('pip install pip --upgrade')
+    axn_win = AxonRemoteOperationWindows('10.59.88.102',
+                                         remote_user='Administrator',
+#                                         gw_host='10.59.84.202',
+#                                         gw_user='ubuntu',
+                                         remote_password=remote_password)
+    import pdb; pdb.set_trace()
+    # Axon on linux Steps-
+    # 1. copy and install requirements.txt
+    # axn_linux.remote_install_requirements('/var/lib/automation/packages/axon_requirements.txt')
+    # 2. Install axon on ubuntu machine using debian
+    # axn_linux.remote_install_distribution('/var/lib/automation/packages/axon_service.deb')
+
+    # Axon on windows Steps.
+    # 1. install using sdist distribution package
+    # axn_win.remote_install_sdist('/var/lib/automation/packages/axon_service.tar.gz')
+    # 2. register service in service manager
+    # axn_win.remote_register_axon()
+    # 3. start service
+    # 4. axn_win.remote_start_axon()
