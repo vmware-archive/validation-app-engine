@@ -1,7 +1,10 @@
 import contextlib
+import logging
 import os
 
 from fabric import Connection
+
+from axon.common import config as conf
 
 
 class AxonRemoteOperation(object):
@@ -22,6 +25,7 @@ class AxonRemoteOperation(object):
         :param pypi_server: Pypi server IP
         :param pypi_server_port: Pypi server port
         """
+        self.log = logging.getLogger(__name__)
         self._host = remote_host
         self._username = remote_user
         self._gw_host = gw_host
@@ -50,6 +54,7 @@ class AxonRemoteOperation(object):
         conn = Connection(self._host, user=self._username,
                           gateway=gateway,
                           connect_kwargs=self.connect_kwargs_remote)
+        self.log.info("Connection is created successfully.")
         try:
             yield conn
         finally:
@@ -63,10 +68,14 @@ class AxonRemoteOperation(object):
         """
         with self.remote_connection() as conn:
             if isinstance(remote_cmd, str):
+                self.log.info("Running remote command - %s" % remote_cmd)
                 conn.run(remote_cmd)
+                self.log.info("Remote command successful - %s" % remote_cmd)
             elif isinstance(remote_cmd, list):
                 for cmd in remote_cmd:
+                    self.log.info("Running remote command - %s" % cmd)
                     conn.run(remote_cmd)
+                    self.log.info("Remote command successful - %s" % cmd)
 
     def remote_put_file(self, source, dest=None):
         """
@@ -76,11 +85,19 @@ class AxonRemoteOperation(object):
         :return: Operation success
         """
         # Observation: dest doesn't work in Windows
+
+        self.log.info("Check for source file existance..")
+        if not os.path.exists(source):
+            self.log.exception("source '%s' doesn't exists" % source)
+            raise
+
         with self.remote_connection() as conn:
+            self.log.info("copy file..")
             if dest:
                 conn.put(source, dest)
             else:
                 conn.put(source)
+            self.log.info("File copy is successful")
 
     def remote_install_pypi(self, pypi_package, remote_os_name='posix'):
         """
@@ -165,18 +182,27 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
              wit same something like vmware-axon*
         :return: None
         """
+        if not os.path.exists(sdist_package_path):
+            self.log.exception("path '%s' doesn't exist." % sdist_package_path)
+            raise
         filename = os.path.basename(sdist_package_path)
         with self.remote_connection() as conn:
+            self.log.info("Installing pywin32 in remote windows machine.")
             conn.run('pip.exe install pywin32')
+            self.log.info('Installation successful !!')
             # In case service is already running, we have to stop that
             # TODO(raies): Need to implement in clean way later
             try:
                 self.remote_stop_axon()
             except Exception:
                 pass
+            self.log.info('copy sdist package to remote machine.')
             conn.put(sdist_package_path)
+            self.log.info('Package copy successful !!')
             install_cmd = 'pip.exe install C:\\%homepath%\\' + filename
+            self.log.info("Installing axon on remote windows machine.")
             conn.run(install_cmd)
+            self.log.info('Installation successful !!')
 
     def remote_install_requirements(self, requirement_file):
         """
@@ -184,14 +210,22 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
         :param pypi package name i.e. 'vmware-axon'
         :return: Operation success
         """
+        if not os.path.exists(requirement_file):
+            self.log.exception("Path '%s' doesn't exist." % requirement_file)
+            raise
         with self.remote_connection() as conn:
             pre_packages = ["pywin32"]
             for pre_package in pre_packages:
+                self.log.info("Installing pywin32 in remote windows machine.")
                 run_pre_cmd = "pip.exe install %s" % pre_package
                 conn.run(run_pre_cmd)
+                self.log.info('Installation successful !!')
 
             filename = os.path.basename(requirement_file)
+
+            self.log.info('copy requirements file  to remote machine.')
             conn.put(requirement_file)
+            self.log.info('Package copy successful !!')
             dest_file = 'C:\\%homepath%\\' + filename
             install_cmd = "pip.exe install -r %s" % dest_file
             if self.pypi_server and self.pypi_server_port:
@@ -200,7 +234,9 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
                                    self.pypi_server,
                                    self.pypi_server,
                                    self.pypi_server_port))
+            self.log.info("Installing requirements on remote machine.")
             conn.run(install_cmd)
+            self.log.info('Installation successful !!')
 
     def remote_register_axon(self, axon_exe='axon_service.exe'):
         """
@@ -208,6 +244,7 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
         :return: Operation success
         """
         register_cmd = "%s --startup auto install" % axon_exe
+        self.log.info("Registering axon service.")
         self.remote_run_command(register_cmd)
 
     def remote_start_axon(self, axon_exe='axon_service.exe'):
@@ -218,6 +255,7 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
         start_cmd = "%s start" % axon_exe
         with self.remote_connection() as conn:
             conn.run('if not exist "C:\\axon" mkdir C:\\axon')
+            self.log.info("starting axon service.")
             conn.run(start_cmd)
 
     def remote_stop_axon(self, axon_exe='axon_service.exe'):
@@ -226,6 +264,7 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
         :return: Operation success
         """
         stop_cmd = "%s stop" % axon_exe
+        self.log.info("stoping axon service.")
         self.remote_run_command(stop_cmd)
 
     def remote_restart_axon(self, axon_exe='axon_service.exe'):
@@ -234,6 +273,7 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
         :return: Operation success
         """
         restart_cmd = "%s restart" % axon_exe
+        self.log.info("Restarting axon service.")
         self.remote_run_command(restart_cmd)
 
     def remote_unregister_axon(self, axon_exe='axon_service.exe'):
@@ -242,6 +282,7 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
         :return: Operation success
         """
         remove_cmd = "%s remove" % axon_exe
+        self.log.info("Unregistering axon service.")
         self.remote_run_command(remove_cmd)
 
 
@@ -261,6 +302,9 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
         :param sdist_package_path: python sdist tar.gz package
         :return: None
         """
+        if not os.path.exists(sdist_package_path):
+            self.log.exception("path '%s' doesn't exist." % sdist_package_path)
+            raise
         filename = os.path.basename(sdist_package_path)
         with self.remote_connection() as conn:
             # In case service is already running, we have to stop that
@@ -269,9 +313,14 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
                 self.remote_stop_axon()
             except Exception:
                 pass
+
+            self.log.info("copy file to remote machine.")
             conn.put(sdist_package_path, '/tmp')
+            self.log.info("Copy successful")
             install_cmd = 'sudo -H pip install /tmp/' + filename
+            self.log.info("Install sdist package to remote machine.")
             conn.run(install_cmd)
+            self.log.info("Installation successful.")
 
     def remote_install_requirements(self, requirement_file, dest="/tmp"):
         """
@@ -279,6 +328,9 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
         :param pypi package name i.e. 'vmware-axon'
         :return: Operation success
         """
+        if not os.path.exists(requirement_file):
+            self.log.exception("Path '%s' doesn't exist." % requirement_file)
+            raise
         with self.remote_connection() as conn:
             # Prerequirements
             conn.run('sudo apt-get install python-setuptools -y --force-yes')
@@ -286,7 +338,9 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
             conn.run('sudo -H pip install --upgrade pip setuptools')
 
             filename = os.path.basename(requirement_file)
+            self.log.info("copy requirements file to remote machine.")
             conn.put(requirement_file, dest)
+            self.log.info("Copy successful")
             dest_file = dest + "/" + filename
             install_cmd = "sudo -H pip install -r %s" % dest_file
             if self.pypi_server and self.pypi_server_port:
@@ -295,7 +349,9 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
                                    self.pypi_server,
                                    self.pypi_server,
                                    self.pypi_server_port))
+            self.log.info("Installing requirements on remote machine.")
             conn.run(install_cmd)
+            self.log.info("Installation successful.")
 
     def remote_install_distribution(self, distribuion_package_path):
         """
@@ -305,6 +361,10 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
                i.e. '/tmp/test_axon.deb' or /tmp/test_axon.rpm
         :return: None
         """
+        if not os.path.exists(distribuion_package_path):
+            msg = "path '%s' doesn't exist." % distribuion_package_path
+            self.log.exception(msg)
+            raise
         filename = os.path.basename(distribuion_package_path)
 
         # Derive os_type from installer package itself
@@ -312,14 +372,20 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
         # <name>.rpm -> rpm based package
         _installer_type = distribuion_package_path.split('.')[1]
         with self.remote_connection() as conn:
+            self.log.info("copy dist file to remote machine.")
             conn.put(distribuion_package_path, '/tmp')
+            self.log.info("Copy successful")
 
+            self.log.info("Installing distribution on remote machine.")
             if _installer_type == 'deb':
                 conn.run('cd /tmp/ && sudo dpkg -i %s' % filename)
+                self.log.info("Installation successful.")
             elif _installer_type == 'rpm':
                 conn.run('cd /tmp/ && sudo rpm -u %s' % filename)
+                self.log.info("Installation successful.")
             else:
-                raise RuntimeError("No valid dist (.rpm or .deb) found.")
+                self.log.exception("No valid dist (.rpm or .deb) found.")
+                raise
 
     def remote_reload_daemon(self):
         """
@@ -327,9 +393,8 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
         :return: None
         """
         reload_cmd = "sudo systemctl daemon-reload"
+        self.log.info("Reload axon daemon")
         self.remote_run_command(reload_cmd)
-        with self.remote_connection() as conn:
-            conn.run(reload_cmd)
 
     def remote_start_axon(self):
         """
@@ -337,6 +402,7 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
         :return: None
         """
         start_cmd = "sudo systemctl start axon"
+        self.log.info("Start axon service.")
         self.remote_run_command(start_cmd)
 
     def remote_stop_axon(self):
@@ -345,6 +411,7 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
         :return: None
         """
         stop_cmd = "sudo systemctl stop axon"
+        self.log.info("Stop axon service.")
         self.remote_run_command(stop_cmd)
 
     def remote_restart_axon(self):
@@ -353,6 +420,7 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
         :return: None
         """
         restart_cmd = "sudo systemctl restart axon"
+        self.log.info("Restart axon service.")
         self.remote_run_command(restart_cmd)
 
     def remote_status_axon(self):
@@ -361,12 +429,13 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
         :return: None
         """
         status_cmd = "sudo systemctl status axon"
+        self.log.info("Get axon service status.")
         self.remote_run_command(status_cmd)
 
 
 if __name__ == "__main__":
     remote_password = "Admin!Admin1998"
-    axn_linux = AxonRemoteOperationLinux('10.59.88.103',
+    axn_linux = AxonRemoteOperationLinux('10.59.88.100',
                                          remote_user='ubuntu',
 #                                         gw_host='10.59.84.202',
 #                                         gw_user='ubuntu',
@@ -377,7 +446,6 @@ if __name__ == "__main__":
 #                                         gw_host='10.59.84.202',
 #                                         gw_user='ubuntu',
                                          remote_password=remote_password)
-    import pdb; pdb.set_trace()
     # Axon on linux Steps-
     # 1. copy and install requirements.txt
     # axn_linux.remote_install_requirements('/var/lib/automation/packages/axon_requirements.txt')
@@ -390,4 +458,4 @@ if __name__ == "__main__":
     # 2. register service in service manager
     # axn_win.remote_register_axon()
     # 3. start service
-    # 4. axn_win.remote_start_axon()
+    # axn_win.remote_start_axon()
