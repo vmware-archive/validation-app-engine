@@ -82,7 +82,7 @@ class NamespaceManager(object):
                 interfaces = Namespace(name, id).interfaces
                 if interfaces:
                     self._namespace_interface_map[name] = \
-                        Namespace(name, id).interfaces[0].address
+                        Namespace(name, id).interfaces
                 else:
                     self._namespace_interface_map[name] = None
 
