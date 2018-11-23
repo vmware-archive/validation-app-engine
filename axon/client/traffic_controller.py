@@ -33,3 +33,23 @@ class TrafficController(object):
     @abc.abstractmethod
     def restart_traffic(self):
         pass
+
+
+class TrafficRecord(object):
+    def __init__(self, endpoint, servers=None, clients=None):
+        self._endpoint = endpoint
+        self._servers = servers if servers else []
+        self._clients = clients if clients else []
+
+    def add_server(self, protocol, port):
+        if (protocol, port) not in self._servers:
+            self._servers.append((protocol, port))
+
+    def add_client(self, protocol, port, destination, connected, action):
+        if (protocol, port, destination) not in self._clients:
+            self._clients.append((
+                protocol, port, destination, connected, action))
+
+    def as_dict(self):
+        return dict(zip(['endpoint', 'servers', 'clients'],
+                        [self._endpoint, self._servers, self._clients]))

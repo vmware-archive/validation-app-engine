@@ -4,6 +4,7 @@ if "Linux" in platform.uname():  # noqa
     from nsenter import Namespace as NsenterNamespace
 import psutil
 import subprocess
+import axon.common.config as axon_config
 
 
 def get_interfaces_in_namespace(return_dict):
@@ -103,6 +104,23 @@ class NamespaceManager(object):
             return ns.as_dict()
         else:
             return None
+
+    def get_all_namespaces_ips(self):
+        """
+        Get the list of all namespaces ips address present in the system
+        based on axon_config.NAMESPACE_INTERFACE_NAME_PREFIXES
+        :return: List of namespace ips
+        :rtype: list
+        """
+        namespaces_ips = []
+        for np in self._namespace_map.values():
+            interface = [iface for iface in np.interfaces for prefix in
+                         axon_config.NAMESPACE_INTERFACE_NAME_PREFIXES
+                         if prefix in iface.name]
+            if not interface:
+                continue
+            namespaces_ips.append(interface[0].address)
+        return namespaces_ips
 
 
 class Interface(object):
