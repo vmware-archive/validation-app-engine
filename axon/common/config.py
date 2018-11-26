@@ -10,6 +10,7 @@ LOG_DIR = "/var/log/axon" if LINUX_OS else "C:\\axon\log"
 LOG_FILE = "axon.log"
 CLOUD_LINUX_INTERFACE = 'nsx-eth0'
 CLOUD_WINDOWS_INTERFACE = 'Ethernet0'
+NAMESPACE_INTERFACE_NAME_PREFIXES = ["veth"]
 
 
 def create_log_dir():

@@ -72,23 +72,29 @@ class AxonController(object):
         self.axon_port = conf.AXON_PORT
         self.service = AxonService()
         self.protocol_config = self.service.RPYC_PROTOCOL_CONFIG
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.WARN)
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.WARN)
         self.axon_service = ThreadPoolServer(
             self.service,
             port=self.axon_port,
             reuse_addr=True,
             protocol_config=self.protocol_config,
-            logger=logger)
+            logger=self.logger)
 
     def start(self):
-        self.service.exposed_traffic.start_servers()
-        self.service.exposed_traffic.start_clients()
+        try:
+            self.service.exposed_traffic.start_servers()
+            self.service.exposed_traffic.start_clients()
+        except Exception:
+            self.logger.exception("Ooops!! Exception during Traffic Start")
         self.axon_service.start()
 
     def stop(self):
-        self.service.exposed_traffic.stop_clients()
-        self.service.exposed_traffic.stop_servers()
+        try:
+            self.service.exposed_traffic.stop_clients()
+            self.service.exposed_traffic.stop_servers()
+        except Exception:
+            self.logger.exception("Ooops!! Exception during Traffic Stop")
         self.axon_service.close()
 
 
