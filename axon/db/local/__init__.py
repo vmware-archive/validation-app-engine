@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import os
 
 from sqlalchemy import create_engine
@@ -27,6 +28,15 @@ def init_session():
     Base.metadata.create_all(engine)
 
 
-def get_session():
-    return db_session()
-
+@contextmanager
+def session_scope():
+    """Provide a transactional scope around a series of operations."""
+    session = db_session
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()

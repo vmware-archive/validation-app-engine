@@ -213,10 +213,10 @@ class AxonRootNamespaceClientAgent(object):
         clients = self.connected_state.get_clients(self.primary_endpoint)
         clients = clients if clients else []
         if clients:
-            mngr = RootNsClientManager(clients) if not \
+            mngr = RootNsClientManager() if not \
                 self.mngrs_map.get('localhost') else \
                 self.mngrs_map.get('localhost')
-            mngr.start_client(self.primary_endpoint)
+            mngr.start_client(self.primary_endpoint, clients)
             self.mngrs_map['localhost'] = mngr
 
     def stop_clients(self, namespace='localhost'):
@@ -262,10 +262,10 @@ class AxonNameSpaceClientAgent(AxonRootNamespaceClientAgent):
             clients = self.connected_state.get_clients(src)
             if not clients:
                 continue
-            ns_mngr = NamespaceClientManager(ns, clients) if not \
+            ns_mngr = NamespaceClientManager(ns) if not \
                 self.mngrs_map.get(ns) else \
                 self.mngrs_map.get(ns)
-            ns_mngr.start_client(src)
+            ns_mngr.start_client(src, clients)
             self.mngrs_map[ns] = ns_mngr
 
     def stop_clients(self, namespace=None):

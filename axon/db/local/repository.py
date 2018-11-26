@@ -62,17 +62,12 @@ class Repositories(object):
             traffic_dict['id'] = str(uuid.uuid4())
         record = models.TrafficRecord(**traffic_dict)
         session.add(record)
-        session.commit()
-        return self.record.get(session, id=record.id)
 
     def create_connected_state(self, session, **cs_dict):
         if not cs_dict.get('id'):
             cs_dict['id'] = str(uuid.uuid4())
         record = models.ConnectedState(**cs_dict)
         session.add(record)
-        session.commit()
-        return self.connected_state.get(session, id=record.id)
-
 
 class ConnectedStateRepository(BaseRepository):
     model_class = models.ConnectedState
@@ -94,32 +89,15 @@ class ConnectedStateRepository(BaseRepository):
 class TrafficRecordsRepositery(BaseRepository):
     model_class = models.TrafficRecord
 
-    def get_failure_count(self, session, start_time, end_time=None, **filters):
-        if end_time:
-            query = session.query(self.model_class).filter_by(
-                **filters).filter(
-                self.model_class.created_time.between(
-                    start_time, end_time))
-        else:
-            query = session.query(self.model_class).filter_by(
-                **filters).filter(
-                self.model_class.created_time >= start_time)
-        query = query.options(joinedload('*'))
-        model_list = query.all()
-        data_model_list = [model.to_dict() for model in model_list]
-        return len(data_model_list)
+    def get_record_count(self, session, start_time, end_time, **filters):
+        return session.query(self.model_class).filter_by(
+            **filters).filter(
+            self.model_class.created.between(start_time, end_time)).count()
 
-    def get_success_count(self, session, start_time, end_time=None, **filters):
-        if end_time:
-            query = session.query(self.model_class).filter_by(
-                **filters).filter(
-                self.model_class.created_time.between(
-                    start_time, end_time))
-        else:
-            query = session.query(self.model_class).filter_by(
-                **filters).filter(
-                self.model_class.created_time >= start_time)
-        query = query.options(joinedload('*'))
+    def get_records(self, session, start_time, end_time, **filters):
+        query = session.query(self.model_class).filter_by(
+            **filters).filter(
+            self.model_class.created.between(start_time, end_time))
         model_list = query.all()
         data_model_list = [model.to_dict() for model in model_list]
-        return len(data_model_list)
+        return data_model_list

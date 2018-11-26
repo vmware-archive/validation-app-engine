@@ -6,11 +6,7 @@ from axon.client.basic_traffic_controller import BasicTrafficController
 
 
 rule_list = list()
-rule_list.append(
-    TrafficRule(Endpoint('10.172.50.40'), Endpoint('10.172.50.40'),
-                Port(12345), Protocol.TCP, Connected.CONNECTED,
-                Action.ALLOW)
-)
+
 
 rule_list.append(
     TrafficRule(Endpoint('10.172.50.40'), Endpoint('10.172.50.40'),
@@ -19,12 +15,7 @@ rule_list.append(
 )
 
 start = time.time()
-print rule_list
 controller = BasicTrafficController()
 controller.register_traffic(rule_list)
-controller.stop_traffic()
-controller.start_traffic()
 controller.restart_traffic()
-
 end = time.time()
-print "Total %s" % (end - start)

@@ -9,6 +9,7 @@ dependency.
 '''
 import ipaddr
 import json
+import six
 
 
 class Error(Exception):
@@ -52,7 +53,6 @@ class Endpoint(object):
         This class represents a valid recognizable endpoint address.
         Endpoint address can be one of the following
             - IP address,
-            - IP Addres range,
             - CIDR representation.
         """
         self.ep_address = ep_address
@@ -64,8 +64,7 @@ class Endpoint(object):
         into the list of IP addresses if a valid input.
         """
         try:
-            # TODO : Expand the ranges and CIDR presentation.
-            return [ipaddr.IPAddress(ep_address)]
+            return list(ipaddr.IPNetwork(six.text_type(ep_address)))
         except Exception as err:
             raise InvalidRangeError(err)
 
@@ -176,3 +175,4 @@ class TrafficRule(object):
                'ALLOW' if self.action else 'DROP',
                self.protocol, self.port,
                self.src_eps, self.dst_eps)
+

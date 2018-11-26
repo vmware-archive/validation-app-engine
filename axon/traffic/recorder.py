@@ -1,6 +1,6 @@
 import logging
 
-from axon.db.local import get_session
+from axon.db.local import session_scope
 from axon.db.local.repository import Repositories
 import axon.db.models.traffic_models as traffic_models
 from axon.db.backends.riak.riak_dbapi import RiakDatabaseAPI
@@ -50,9 +50,8 @@ class SqliteDbRecorder(TrafficRecorder):
         self._repositery = Repositories()
 
     def record_traffic(self, record):
-        _session = get_session()
-        self._repositery.create_record(_session, **record.as_dict())
-        _session.commit()
+        with session_scope() as _session:
+            self._repositery.create_record(_session, **record.as_dict())
 
 
 # TODO add insert Batch insert to reduce database RTT

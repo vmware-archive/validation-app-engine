@@ -22,8 +22,8 @@ class TrafficManger(Manager):
     def register_traffic(self, traffic_rules):
         return self._client.traffic.register_traffic(traffic_rules)
 
-    def unregister_traffic(self, src=None):
-        self._client.traffic.unregister_traffic(src)
+    def unregister_traffic(self, traffic_rules):
+        self._client.traffic.unregister_traffic(traffic_rules)
 
     def list_servers(self):
         return self._client.traffic.list_servers()
@@ -58,6 +58,12 @@ class StatsManager(Manager):
     def get_success_count(self, start_time=None, end_time=None,
                           destination=None, port=None):
         return self._client.stats.get_success_count(
+            start_time=start_time, end_time=end_time,
+            destination=destination, port=port)
+
+    def get_failures(self, start_time=None, end_time=None,
+                     destination=None, port=None):
+        return self._client.stats.get_failures(
             start_time=start_time, end_time=end_time,
             destination=destination, port=port)
 

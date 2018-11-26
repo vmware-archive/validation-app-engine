@@ -3,6 +3,7 @@ from collections import defaultdict
 import logging
 import six
 import platform
+import threading
 if "Linux" in platform.uname():  # noqa
     from nsenter import Namespace
 
@@ -17,6 +18,7 @@ class ServerRegistry(object):
     """
     def __init__(self):
         self.__registry = defaultdict(dict)
+        self.lock = threading.RLock()
 
     def add_server(self, namespace, port, protocol, server_obj):
         """
@@ -31,7 +33,8 @@ class ServerRegistry(object):
         :type server_obj: ServerContainer
         :return: None
         """
-        self.__registry[namespace][(port, protocol)] = server_obj
+        with self.lock:
+            self.__registry[namespace][(port, protocol)] = server_obj
 
     def remove_server(self, namespace, port, protocol):
         """
@@ -44,8 +47,9 @@ class ServerRegistry(object):
         :type protocol: str
         :return: None
         """
-        if self.__registry[namespace].get((port, protocol)):
-            del self.__registry[namespace][(port, protocol)]
+        with self.lock:
+            if self.__registry[namespace].get((port, protocol)):
+                del self.__registry[namespace][(port, protocol)]
 
     def get_server(self, namespace, port, protocol):
         """
@@ -58,13 +62,15 @@ class ServerRegistry(object):
         :type protocol: str
         :return: Server Object
         """
-        return self.__registry[namespace].get((port, protocol))
+        with self.lock:
+            return self.__registry[namespace].get((port, protocol))
 
     def get_all_servers(self):
         """
         Get all server objects
         """
-        return self.__registry.items()
+        with self.lock:
+            return self.__registry.items()
 
 
 class ClientRegistry(object):
@@ -73,6 +79,7 @@ class ClientRegistry(object):
     """
     def __init__(self):
         self.__registry = {}
+        self.lock = threading.RLock()
 
     def add_client(self, namespace, client_obj):
         """
@@ -81,7 +88,8 @@ class ClientRegistry(object):
         :type namespace: str
         :param client_obj: client container
         """
-        self.__registry[namespace] = client_obj
+        with self.lock:
+            self.__registry[namespace] = client_obj
 
     def remove_client(self, namespace):
         """
@@ -89,10 +97,11 @@ class ClientRegistry(object):
         :param namespace: name space where the client is running
         :type namespace: str
         """
-        try:
-            del self.__registry[namespace]
-        except KeyError:
-            pass
+        with self.lock:
+            try:
+                del self.__registry[namespace]
+            except KeyError:
+                pass
 
     def get_client(self, namespace):
         """
@@ -104,13 +113,15 @@ class ClientRegistry(object):
         :return: Client object
         :rtype: TrafficClient
         """
-        return self.__registry.get(namespace)
+        with self.lock:
+            return self.__registry.get(namespace)
 
     def get_all_client(self):
         """
         Get all client objects
         """
-        return self.__registry.items()
+        with self.lock:
+            return self.__registry.items()
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -328,12 +339,11 @@ class RootNsClientManager(ClientManager):
 
     ROOT_NAMESPACE_NAME = 'localhost'
 
-    def __init__(self, clients):
+    def __init__(self):
         self._client_registry = ClientRegistry()
-        self._clients = clients
         self.log = logging.getLogger(__name__)
 
-    def start_client(self, src):
+    def start_client(self, src, clients):
         self.log.info("Starting client process on interface %s" % src)
         client = self._client_registry.get_client(self.ROOT_NAMESPACE_NAME)
         if client and client.is_running():
@@ -341,7 +351,7 @@ class RootNsClientManager(ClientManager):
             return
         try:
             process = WorkerProcess(
-                TrafficClient, (src, self._clients), {})
+                TrafficClient, (src, clients), {})
             process.start()
             self._client_registry.add_client(self.ROOT_NAMESPACE_NAME, process)
         except Exception as e:
@@ -387,19 +397,19 @@ class NamespaceClientManager(RootNsClientManager):
 
     NAMESPACE_PATH = '/var/run/netns/'
 
-    def __init__(self, namespace, clients):
-        super(NamespaceClientManager, self).__init__(clients)
+    def __init__(self, namespace):
+        super(NamespaceClientManager, self).__init__()
         self._ns = namespace
         self._ns_full_path = self.NAMESPACE_PATH + self._ns
 
-    def start_client(self, src):
+    def start_client(self, src, clients):
         client = self._client_registry.get_client(self._ns)
         if client and client.is_running():
             self.log.warning("Client is already running on %s" % src)
             return
         try:
             process = WorkerProcess(
-                TrafficClient, (src, self._clients), {})
+                TrafficClient, (src, clients), {})
             with Namespace(self._ns_full_path, 'net'):
                 process.start()
                 self._client_registry.add_client(self._ns, process)

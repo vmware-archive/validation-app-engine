@@ -2,7 +2,7 @@ import abc
 import logging
 import six
 
-from axon.db.local import get_session
+from axon.db.local import session_scope
 from axon.db.local.repository import Repositories
 
 
@@ -82,17 +82,9 @@ class DBConnectedState(ConnectedState):
         :param clients: list of clients
         :type clients: list
         """
-        session = get_session()
-        try:
+        with session_scope() as session:
             self._repository.connected_state.update(
                 session, endpoint, servers=servers, clients=clients)
-            session.commit()
-        except Exception as e:
-            self.log.exception(
-                "Exception happened during creating connected state"
-                " for endpoint %s" % endpoint)
-            session.rollback()
-            raise e
 
     def create_connected_state(self, endpoint=None,
                                servers=None, clients=None):
@@ -104,18 +96,10 @@ class DBConnectedState(ConnectedState):
         :param clients: list of clients
         :type clients: list
         """
-        session = get_session()
-        try:
+        with session_scope() as session:
             self._repository.create_connected_state(
                 session, endpoint=endpoint,
                 servers=servers, clients=clients)
-            session.commit()
-        except Exception as e:
-            self.log.exception(
-                "Exception happened during creating connected state"
-                " for endpoint %s" % endpoint)
-            session.rollback()
-            raise e
 
     def get_connected_state(self, endpoint=None):
         """
@@ -123,12 +107,12 @@ class DBConnectedState(ConnectedState):
         :param endpoint: endpoint ip
         :type endpoint: str
         """
-        session = get_session()
-        filters = {}
-        if endpoint:
-            filters['endpoint'] = endpoint
-        return self._repository.connected_state.get_all(
-            session, **filters)
+        with session_scope() as session:
+            filters = {}
+            if endpoint:
+                filters['endpoint'] = endpoint
+            return self._repository.connected_state.get_all(
+                session, **filters)
 
     def delete_connected_state(self, endpoint=None):
         """
@@ -136,19 +120,13 @@ class DBConnectedState(ConnectedState):
         :param endpoint: endpoint ip
         :type endpoint: str
         """
-        session = get_session()
-        try:
+        with session_scope() as session:
             if endpoint:
                 self._repository.connected_state.delete(session,
                                                         endpoint=endpoint)
             else:
                 self._repository.connected_state.delete_all(session)
             session.commit()
-        except Exception:
-            self.log.exception(
-                "Exception happened during deleting connected state"
-                " for endpoint %s" % endpoint)
-            session.rollback()
 
     def get_servers(self, endpoint):
         """
@@ -156,8 +134,9 @@ class DBConnectedState(ConnectedState):
         :param endpoint: endpoint ip
         :type endpoint: str
         """
-        session = get_session()
-        return self._repository.connected_state.get_servers(session, endpoint)
+        with session_scope() as session:
+            return self._repository.connected_state.get_servers(
+                session, endpoint)
 
     def get_clients(self, endpoint):
         """
@@ -165,8 +144,9 @@ class DBConnectedState(ConnectedState):
         :param endpoint: endpoint ip
         :type endpoint: str
         """
-        session = get_session()
-        return self._repository.connected_state.get_clients(session, endpoint)
+        with session_scope() as session:
+            return self._repository.connected_state.get_clients(
+                session, endpoint)
 
 
 class ConnectedStateProcessor(object):
