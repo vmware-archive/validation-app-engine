@@ -63,7 +63,7 @@ class TrafficRecord(object):
 class BasicTrafficController(TrafficController):
 
     def __init__(self, gateway_host=None):
-        super(CloudTrafficController, self).__init__()
+        super(BasicTrafficController, self).__init__()
         self._gw_host = gateway_host
         self._servers = dict()
 
