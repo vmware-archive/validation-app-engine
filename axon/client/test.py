@@ -2,7 +2,7 @@ import time
 
 from axon.client.traffic_elements import TrafficRule, \
     Endpoint, Port, Protocol, Action, Connected
-from axon.client.cloud_traffic_controller import CloudTrafficController
+from axon.client.basic_traffic_controller import BasicTrafficController
 
 
 rule_list = list()
@@ -20,7 +20,7 @@ rule_list.append(
 
 start = time.time()
 print rule_list
-controller = CloudTrafficController()
+controller = BasicTrafficController()
 controller.register_traffic(rule_list)
 controller.stop_traffic()
 controller.start_traffic()

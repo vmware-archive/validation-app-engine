@@ -60,7 +60,7 @@ class TrafficRecord(object):
                         [self._endpoint, self._servers, self._clients]))
 
 
-class CloudTrafficController(TrafficController):
+class BasicTrafficController(TrafficController):
 
     def __init__(self, gateway_host=None):
         super(CloudTrafficController, self).__init__()
