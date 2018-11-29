@@ -5,11 +5,10 @@ import six
 import socket
 from threading import Thread
 import time
+import logging
 
-import axon.common.config as conf
 from axon.common.consts import PACKET_SIZE
 from axon.traffic.resources import TCPRecord, UDPRecord
-from axon.traffic.recorder import SqliteDbRecorder
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -34,7 +33,7 @@ class Client(object):
 
 class TCPClient(Client):
     def __init__(self, source, destination, port, connected=True,
-                 action=1, recorder=None, request_count=1):
+                 action=1, request_count=1, tr_queue=None):
         """
         Client to send TCP requests
         :param source: source ip
@@ -48,17 +47,18 @@ class TCPClient(Client):
         :param action: whether traffic will be accepted or rejected by server
                       i.e. 0 for reject and 1 for allow
         :type action: int
-        :param recorder: recorder object which will record the data
-        :type recorder: TrafficRecorder
+        :param tr_queue: traffic record queue
+        :type tr_queue: Queue
         """
+        self.log = logging.getLogger(__name__)
         self._source = source
         self._port = port
         self._destination = destination
         self._start_time = None
-        self._recorder = recorder if recorder else SqliteDbRecorder()
         self._request_count = request_count
         self._connected = connected
         self._action = action
+        self._tr_queue = tr_queue
 
     def _create_socket(self, address_family=socket.AF_INET,
                        socket_type=socket.SOCK_STREAM):
@@ -96,7 +96,7 @@ class TCPClient(Client):
         try:
             sock.send(payload)
             sock.recv(PACKET_SIZE)
-        except Exception as e:
+        except:
             raise
         finally:
             sock.close()
@@ -124,12 +124,17 @@ class TCPClient(Client):
         :return: None
         """
         success = self.is_traffic_successful(success)
-        if self._recorder:
-            record = TCPRecord(
-                self._source, self._destination, self._port,
-                self._get_latency(),
-                error, success, self._connected)
-            self._recorder.record_traffic(record)
+        record = TCPRecord(
+            self._source, self._destination, self._port,
+            self._get_latency(),
+            error, success, self._connected)
+        try:
+            self._tr_queue.put(record)
+        except:
+            self.log.exception("Exception while adding TCP record for src "
+                               "{0} and dst {1} to traffic queue {2}".format(
+                                self._source, self._destination,
+                                self._tr_queue))
 
     def ping(self):
         # TODO(pksingh) Decide on payload
@@ -172,7 +177,7 @@ class UDPClient(TCPClient):
         try:
             sock.sendto(payload, (self._destination, self._port))
             sock.recvfrom(PACKET_SIZE)
-        except Exception as e:
+        except:
             raise
         finally:
             sock.close()
@@ -183,20 +188,28 @@ class UDPClient(TCPClient):
         :return: None
         """
         success = self.is_traffic_successful(success)
-        if self._recorder:
-            record = UDPRecord(
-                self._source, self._destination, self._port,
-                self._get_latency(), error, success, self._connected)
-            self._recorder.record_traffic(record)
+        record = UDPRecord(
+            self._source, self._destination, self._port,
+            self._get_latency(), error, success, self._connected)
+        self.log.info("Adding UDP record to queue {0} {1}".format(
+            self._tr_queue, record))
+        try:
+            self._tr_queue.put(record)
+        except:
+            self.log.exception("Exception while adding TCP record for src "
+                               "{0} and dst {1} to traffic queue {2}".format(
+                                self._source,
+                                self._destination,
+                                self._tr_queue))
 
 
 class TrafficClient(object):
 
-    def __init__(self, src, destinations, request_rate=100, recorder=None):
+    def __init__(self, src, destinations, request_rate=100, tr_queue=None):
         self._src = src
         self._request_rate = min(request_rate, len(destinations))
         self._destinations = itertools.cycle(destinations)
-        self._recorder = recorder if recorder else conf.TRAFFIC_RECORDER
+        self._tr_queue = tr_queue
 
     def _send_traffic(self):
         threads = []
@@ -207,11 +220,11 @@ class TrafficClient(object):
             if protocol == "TCP":
                 client = TCPClient(
                     self._src, endpoint, port,
-                    connected, action, self._recorder)
+                    connected, action, tr_queue=self._tr_queue)
             if protocol == "UDP":
                 client = UDPClient(
                     self._src, endpoint, port,
-                    connected, action, self._recorder)
+                    connected, action, tr_queue=self._tr_queue)
             thread = Thread(target=client.ping)
             thread.daemon = True
             thread.start()

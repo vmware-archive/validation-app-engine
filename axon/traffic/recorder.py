@@ -57,6 +57,9 @@ class SqliteDbRecorder(TrafficRecorder):
 # TODO add insert Batch insert to reduce database RTT
 class RiakRecorder(TrafficRecorder):
     def __init__(self, host, port, test_id):
+        self.log = logging.getLogger(__name__)
+        self.log.info("Initializing Riak at host {0} port {1} "
+                      "for test_id {2}".format(host, port, test_id))
         self._test_id = test_id
         self._riak_api = RiakDatabaseAPI(host=host, port=port)
 
