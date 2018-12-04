@@ -79,7 +79,7 @@ class AxonController(object):
             port=self.axon_port,
             reuse_addr=True,
             protocol_config=self.protocol_config,
-            logger=logger, nbThreads=50)
+            logger=self.logger, nbThreads=50)
 
     def start(self):
         try:
