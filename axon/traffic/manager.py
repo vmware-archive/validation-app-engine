@@ -75,7 +75,7 @@ class ServerRegistry(object):
 
 class ClientRegistry(object):
     """
-    Registry to holds 1all of the clients running across various namespaces
+    Registry to holds all of the clients running across various namespaces
     """
     def __init__(self):
         self.__registry = {}
@@ -224,7 +224,7 @@ class RootNsServerManager(ServerManager):
                                      (conf[1], conf[0]))
                     self._server_registry.remove_server(
                         self.ROOT_NAMESPACE_NAME, conf[0], conf[1])
-            except:
+            except Exception as e:
                 self.log.exception(
                     "Stopping %s server on port %s failed" % (conf[1], conf[0]))
 
@@ -339,9 +339,8 @@ class RootNsClientManager(ClientManager):
 
     ROOT_NAMESPACE_NAME = 'localhost'
 
-    def __init__(self, tr_queue):
+    def __init__(self):
         self._client_registry = ClientRegistry()
-        self._tr_queue = tr_queue
         self.log = logging.getLogger(__name__)
 
     def start_client(self, src, clients):
@@ -352,7 +351,7 @@ class RootNsClientManager(ClientManager):
             return
         try:
             process = WorkerProcess(
-                TrafficClient, (src, clients), {'tr_queue': self._tr_queue})
+                TrafficClient, (src, clients), {})
             process.start()
             self._client_registry.add_client(self.ROOT_NAMESPACE_NAME, process)
         except Exception as e:
@@ -372,7 +371,7 @@ class RootNsClientManager(ClientManager):
                 self._client_registry.remove_client(self.ROOT_NAMESPACE_NAME)
             else:
                 self.log.warning("Client is not running in root namespace")
-        except:
+        except Exception as e:
             self.log.exception(
                 "Stopping client failed in namespace %s" %
                 self.ROOT_NAMESPACE_NAME)
@@ -386,9 +385,9 @@ class RootNsClientManager(ClientManager):
             try:
                 client.stop()
                 self._client_registry.remove_client(namespace)
-            except:
+            except Exception as e:
                 self.log.exception("Stopping client failed in namespace %s" %
-                                   self.ROOT_NAMESPACE_NAME)
+                self.ROOT_NAMESPACE_NAME)
 
 
 class NamespaceClientManager(RootNsClientManager):
@@ -398,8 +397,8 @@ class NamespaceClientManager(RootNsClientManager):
 
     NAMESPACE_PATH = '/var/run/netns/'
 
-    def __init__(self, namespace, tr_queue):
-        super(NamespaceClientManager, self).__init__(tr_queue)
+    def __init__(self, namespace):
+        super(NamespaceClientManager, self).__init__()
         self._ns = namespace
         self._ns_full_path = self.NAMESPACE_PATH + self._ns
 
@@ -410,7 +409,7 @@ class NamespaceClientManager(RootNsClientManager):
             return
         try:
             process = WorkerProcess(
-                TrafficClient, (src, clients), {'tr_queue': self._tr_queue})
+                TrafficClient, (src, clients), {})
             with Namespace(self._ns_full_path, 'net'):
                 process.start()
                 self._client_registry.add_client(self._ns, process)
@@ -433,6 +432,6 @@ class NamespaceClientManager(RootNsClientManager):
             else:
                 self.log.warning("Client is not running in namespace %s" %
                                  self._ns)
-        except:
+        except Exception as e:
             self.log.exception("Stopping client failed in namespace %s" %
                                self._ns)

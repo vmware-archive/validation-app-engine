@@ -7,7 +7,7 @@ import requests
 import six.moves.urllib as urllib
 
 # seconds
-API_TIMEOUT = 30
+API_TIMEOUT = 5
 RETRY_WAIT = 10
 NUM_RETRIES = 3
 
@@ -56,13 +56,8 @@ class Client(object):
                        payload)
         # we don't retry post at the client level, since that can have
         # really bad application-level side effects if we write multiple times
-        response = None
-        try:
-            response = self.session.post(url=url, data=payload, timeout=timeout)
-        except:
-            self.log.error("Riak Exception while sending POST request for"
-                           " url {0} payload {1} got response {2}".format(
-                                path, payload, response))
+        response = self.session.post(url=url, data=payload, timeout=timeout)
+        # self.log.debug("response status [%d]", response.status_code)
         return response
 
     def _read(self,

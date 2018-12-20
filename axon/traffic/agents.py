@@ -8,7 +8,6 @@ from axon.utils.network_utils import NamespaceManager, Namespace,\
     InterfaceManager
 import axon.common.config as axon_config
 
-
 class AxonRootNamespaceServerAgent(object):
     """
     Launch Servers in Root Namespace
@@ -186,11 +185,10 @@ class AxonRootNamespaceClientAgent(object):
     """
     Launch Servers in Root Namespace
     """
-    def __init__(self, tr_queue=None):
+    def __init__(self):
         self.mngrs_map = {}
         self.connected_state = ConnectedStateProcessor(DBConnectedState())
         self._primary_ep = None
-        self._tr_queue = tr_queue
         self.log = logging.getLogger(__name__)
 
     # TODO(Pradeep Singh) MOve below code to a common location
@@ -215,7 +213,7 @@ class AxonRootNamespaceClientAgent(object):
         clients = self.connected_state.get_clients(self.primary_endpoint)
         clients = clients if clients else []
         if clients:
-            mngr = RootNsClientManager(self._tr_queue) if not \
+            mngr = RootNsClientManager() if not \
                 self.mngrs_map.get('localhost') else \
                 self.mngrs_map.get('localhost')
             mngr.start_client(self.primary_endpoint, clients)
@@ -239,8 +237,8 @@ class AxonNameSpaceClientAgent(AxonRootNamespaceClientAgent):
     Launch Servers in different namespaces
     """
 
-    def __init__(self, ns_list=None, ns_iterface_map=None, tr_queue=None):
-        super(AxonNameSpaceClientAgent, self).__init__(tr_queue)
+    def __init__(self, ns_list=None, ns_iterface_map=None):
+        super(AxonNameSpaceClientAgent, self).__init__()
         self._ns_list = ns_list
         self._ns_iterface_map = ns_iterface_map
         self._setup()
@@ -264,7 +262,7 @@ class AxonNameSpaceClientAgent(AxonRootNamespaceClientAgent):
             clients = self.connected_state.get_clients(src)
             if not clients:
                 continue
-            ns_mngr = NamespaceClientManager(ns, self._tr_queue) if not \
+            ns_mngr = NamespaceClientManager(ns) if not \
                 self.mngrs_map.get(ns) else \
                 self.mngrs_map.get(ns)
             ns_mngr.start_client(src, clients)
