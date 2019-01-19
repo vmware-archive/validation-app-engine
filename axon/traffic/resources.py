@@ -19,7 +19,7 @@ class TrafficRecord:
         self.dst = dst
         self.port = port
         self.latency = latency
-        self.error = error
+        self.error = error[:100] if error else error
         self.success = success
         self.traffic_type = self.TRAFFIC_TYPE
         self.connected = connected
@@ -45,3 +45,10 @@ class UDPRecord(TrafficRecord):
     UDP Traffic Record
     """
     TRAFFIC_TYPE = "UDP"
+
+
+class HTTPRecord(TrafficRecord):
+    """
+    HTTP Traffic Record
+    """
+    TRAFFIC_TYPE = 'HTTP'

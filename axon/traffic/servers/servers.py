@@ -10,10 +10,25 @@ import signal
 import six
 from six.moves import socketserver
 import subprocess
-
+from six.moves.BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 
 from axon.common.consts import REQUEST_QUEUE_SIZE, PACKET_SIZE,\
     ALLOW_REUSE_ADDRESS
+
+
+class HTTPRequestHandler(BaseHTTPRequestHandler):
+    """
+    Handle to handle HTTP Request
+    """
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        message =  "Hello From AXON HTTP Server \n"
+        self.wfile.write(message.encode('utf-8'))
+        return
+
+    def log_message(self, format, *args):
+        return
 
 
 class TCPRequestHandler(socketserver.BaseRequestHandler):
@@ -80,6 +95,23 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn,
     This is a TCP Server which will handle every single client request
     in separate thread.
     """
+    allow_reuse_address = ALLOW_REUSE_ADDRESS
+    request_queue_size = REQUEST_QUEUE_SIZE
+
+    def run(self):
+        self.serve_forever()
+
+    def stop(self):
+        self.shutdown()
+        self.server_close()
+
+    def is_alive(self):
+        pass
+
+
+class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer, Server):
+    """Handle requests in a separate thread."""
+
     allow_reuse_address = ALLOW_REUSE_ADDRESS
     request_queue_size = REQUEST_QUEUE_SIZE
 
@@ -165,6 +197,10 @@ def create_server_class(protocol, port, source, server_type='socket'):
     elif server_type == "iperf":
         server_class = IperfServer
         args = (source, protocol, port)
+        kwargs = {}
+    elif protocol == 'HTTP':
+        server_class = ThreadedHTTPServer
+        args = ((source, int(port)), HTTPRequestHandler)
         kwargs = {}
     else:
         raise ValueError("Invalid Value (%s, %s, %s) for Server" %

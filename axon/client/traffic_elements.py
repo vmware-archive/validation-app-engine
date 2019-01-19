@@ -109,8 +109,9 @@ class Protocol(object):
     """
     TCP = "TCP"
     UDP = "UDP"
+    HTTP = "HTTP"
 
-    allowed = [TCP, UDP]
+    allowed = [TCP, UDP, HTTP]
 
 
 class Action(object):
