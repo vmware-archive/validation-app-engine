@@ -5,13 +5,19 @@
 # in the root directory of this project.
 
 import logging
+from multiprocessing import Queue
+import threading
 
+from axon.db.db_pool_manager import DBPoolManager
 from axon.traffic.connected_state import ConnectedStateProcessor, \
     DBConnectedState
 from axon.traffic.agents import AxonRootNamespaceClientAgent,\
     AxonRootNamespaceServerAgent, AxonNameSpaceClientAgent,\
     AxonNameSpaceServerAgent
 from axon.utils.network_utils import NamespaceManager
+
+
+RECORD_QUEUE_SIZE = 5000
 
 
 class TrafficApp(object):
@@ -21,14 +27,22 @@ class TrafficApp(object):
         self._conf = config
         self._cs_db = ConnectedStateProcessor(DBConnectedState())
         namespaces = NamespaceManager().get_all_namespaces()
+        record_queue = Queue(RECORD_QUEUE_SIZE)
         if namespaces and self._conf.NAMESPACE_MODE:
             self.namespace_mode = True
             self._server_agent = AxonNameSpaceServerAgent()
-            self._client_agent = AxonNameSpaceClientAgent()
+            self._client_agent = AxonNameSpaceClientAgent(record_queue)
         else:
             self.namespace_mode = False
             self._server_agent = AxonRootNamespaceServerAgent()
-            self._client_agent = AxonRootNamespaceClientAgent()
+            self._client_agent = AxonRootNamespaceClientAgent(record_queue)
+        self._start_db_pool_manager(record_queue)
+
+    def _start_db_pool_manager(self, queue):
+        manager = DBPoolManager(queue)
+        thread = threading.Thread(target=manager.run)
+        thread.daemon = True
+        thread.start()
 
     def add_server(self, protocol, port, endpoint, namespace=None):
         if not self.namespace_mode and namespace:

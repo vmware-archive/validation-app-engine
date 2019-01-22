@@ -7,8 +7,7 @@
 import pickle
 
 from sqlalchemy.types import TypeDecorator, TEXT
-from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy import Column, String, Boolean, Float, Integer
+from sqlalchemy.ext.declarative import declared_attr
 
 
 def passby(data):
@@ -74,52 +73,3 @@ class BaseModel(object):
                 intersection))
 
     FIELDS = {}
-
-
-Base = declarative_base(cls=BaseModel)
-
-
-class TrafficRecord(Base):
-    __tablename__ = 'trafficrecord'
-
-    id = Column(String(36), primary_key=True)
-    src = Column(String(36))
-    dst = Column(String(36))
-    port = Column(Integer())
-    latency = Column(Float())
-    error = Column(String(100))
-    success = Column(Boolean(), default=True)
-    type = Column(String(10))
-    created = Column(Float())
-    connected = Column(Boolean())
-
-    FIELDS = {
-        'id': str,
-        'src': str,
-        'dst': str,
-        'port': int,
-        'latency': float,
-        'error': str,
-        'type': str,
-        'created': int,
-    }
-
-    FIELDS.update(Base.FIELDS)
-
-
-class ConnectedState(Base):
-    __tablename__ = 'connectedstate'
-
-    id = Column(String(36))
-    endpoint = Column(String(36), primary_key=True)
-    servers = Column(PickleEncodedList)
-    clients = Column(PickleEncodedList)
-
-    FIELDS = {
-        'id': str,
-        'endpoint': str,
-        'servers': passby,
-        'clients': passby
-    }
-
-    FIELDS.update(Base.FIELDS)

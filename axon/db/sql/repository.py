@@ -7,8 +7,10 @@
 import uuid
 
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import func
 
-from axon.db.local import models
+from axon.db.sql.config import models as cmodels
+from axon.db.sql.analytics import models as amodels
 
 
 class BaseRepository(object):
@@ -62,22 +64,41 @@ class Repositories(object):
     def __init__(self):
         self.record = TrafficRecordsRepositery()
         self.connected_state = ConnectedStateRepository()
+        self.request_count = RequestCountRepository()
+        self.latency = LatencyStatsRepository()
+        self.fault = FaultRepository()
+
+    def create_latency_stats(self, session, latency_sum, samples, created):
+        id = str(uuid.uuid4())
+        record = amodels.LatencyStats(id=id, latency_sum=latency_sum,
+                                      samples=samples, created=created)
+        session.add(record)
+
+    def create_record_count(self, session, success, failure, created):
+        id = str(uuid.uuid4())
+        record = amodels.RequestCount(id=id, success=success,
+                                      failure=failure, created=created)
+        session.add(record)
 
     def create_record(self, session, **traffic_dict):
         if not traffic_dict.get('id'):
             traffic_dict['id'] = str(uuid.uuid4())
-        record = models.TrafficRecord(**traffic_dict)
+        if traffic_dict.get('success'):
+            del traffic_dict['error']
+            record = amodels.TrafficRecord(**traffic_dict)
+        else:
+            record = amodels.Fault(**traffic_dict)
         session.add(record)
 
     def create_connected_state(self, session, **cs_dict):
         if not cs_dict.get('id'):
             cs_dict['id'] = str(uuid.uuid4())
-        record = models.ConnectedState(**cs_dict)
+        record = cmodels.ConnectedState(**cs_dict)
         session.add(record)
 
 
 class ConnectedStateRepository(BaseRepository):
-    model_class = models.ConnectedState
+    model_class = cmodels.ConnectedState
 
     def get_servers(self, session, endpoint_ip):
         result = self.get(session, endpoint=endpoint_ip)
@@ -94,7 +115,7 @@ class ConnectedStateRepository(BaseRepository):
 
 
 class TrafficRecordsRepositery(BaseRepository):
-    model_class = models.TrafficRecord
+    model_class = amodels.TrafficRecord
 
     def get_record_count(self, session, start_time, end_time, **filters):
         return session.query(self.model_class).filter_by(
@@ -108,3 +129,35 @@ class TrafficRecordsRepositery(BaseRepository):
         model_list = query.all()
         data_model_list = [model.to_dict() for model in model_list]
         return data_model_list
+
+
+class FaultRepository(TrafficRecordsRepositery):
+    model_class = amodels.Fault
+
+
+class LatencyStatsRepository(BaseRepository):
+    model_class = amodels.LatencyStats
+
+    def get_latency_stats(self, session, start_time, end_time):
+        model = self.model_class
+        query = session.query(
+            func.sum(model.latency_sum).label("latency_sum"),
+            func.sum(model.samples).label("samples")).filter(
+                model.created.between(start_time, end_time))
+        result = query.all()[0]
+        avg_latency = 0 if not result[1] else result[0] / result[1]
+        return avg_latency
+
+
+class RequestCountRepository(BaseRepository):
+    model_class = amodels.RequestCount
+
+    def get_request_count(self, session, start_time, end_time):
+        model = self.model_class
+        query = session.query(
+            func.sum(model.failure).label("failure"),
+            func.sum(model.success).label("success")).filter(
+                model.created.between(start_time, end_time))
+        result = query.all()[0]
+        return {'success': result[1] if result[1] else 0,
+                'failure': result[0] if result[0] else 0}

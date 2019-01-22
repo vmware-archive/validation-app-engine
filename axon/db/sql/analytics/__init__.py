@@ -16,21 +16,23 @@ def get_engine(uri):
 
 
 if os.name == "posix":
-   DB_URL = "sqlite:////opt/axon/traffic.db"
+   ANALYTICS_DATABASE_URL = "sqlite:////opt/axon/analytics.db"
 else:
-   DB_URL = "sqlite:///C:\\axon\\traffic.db"
+   ANALYTICS_DATABASE_URL = "sqlite:///C:\\axon\\analytics.db"
 
 
-DATABASE_URL = os.getenv('DATABASE_URL', DB_URL)
+ANALYTICS_DATABASE_URL = os.getenv('DATABASE_URL', ANALYTICS_DATABASE_URL)
+
+
 db_session = scoped_session(sessionmaker(
     autoflush=True,
     autocommit=False))
-engine = get_engine(DATABASE_URL)
+engine = get_engine(ANALYTICS_DATABASE_URL)
 
 
 def init_session():
     db_session.configure(bind=engine)
-    from axon.db.local.models import Base
+    from axon.db.sql.analytics.models import Base
     Base.metadata.create_all(engine)
 
 

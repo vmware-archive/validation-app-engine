@@ -345,9 +345,10 @@ class RootNsClientManager(ClientManager):
 
     ROOT_NAMESPACE_NAME = 'localhost'
 
-    def __init__(self):
+    def __init__(self, record_queue):
         self._client_registry = ClientRegistry()
         self.log = logging.getLogger(__name__)
+        self._record_queue = record_queue
 
     def start_client(self, src, clients):
         self.log.info("Starting client process on interface %s" % src)
@@ -357,7 +358,7 @@ class RootNsClientManager(ClientManager):
             return
         try:
             process = WorkerProcess(
-                TrafficClient, (src, clients), {})
+                TrafficClient, (src, clients, self._record_queue), {})
             process.start()
             self._client_registry.add_client(self.ROOT_NAMESPACE_NAME, process)
         except Exception as e:
@@ -403,8 +404,8 @@ class NamespaceClientManager(RootNsClientManager):
 
     NAMESPACE_PATH = '/var/run/netns/'
 
-    def __init__(self, namespace):
-        super(NamespaceClientManager, self).__init__()
+    def __init__(self, namespace, record_queue):
+        super(NamespaceClientManager, self).__init__(record_queue)
         self._ns = namespace
         self._ns_full_path = self.NAMESPACE_PATH + self._ns
 
@@ -415,7 +416,7 @@ class NamespaceClientManager(RootNsClientManager):
             return
         try:
             process = WorkerProcess(
-                TrafficClient, (src, clients), {})
+                TrafficClient, (src, clients, self._record_queue), {})
             with Namespace(self._ns_full_path, 'net'):
                 process.start()
                 self._client_registry.add_client(self._ns, process)

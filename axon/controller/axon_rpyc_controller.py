@@ -14,7 +14,8 @@ from axon.apps.stats import StatsApp
 from axon.apps.namespace import NamespaceApp
 from axon.apps.interface import InterfaceApp
 from axon.common import config as conf
-from axon.db.local import init_session
+from axon.db.sql.config import init_session as cinit_session
+from axon.db.sql.analytics import init_session as ainit_session
 
 rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 
@@ -65,7 +66,8 @@ class AxonService(AxonServiceBase):
 
     def __init__(self):
         super(AxonService, self).__init__()
-        init_session()
+        cinit_session()
+        ainit_session()
         self.exposed_traffic = exposed_Traffic(conf)
         self.exposed_stats = exposed_Stats()
         self.exposed_namespace = exposed_Namespace()

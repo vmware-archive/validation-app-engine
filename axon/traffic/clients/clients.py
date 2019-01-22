@@ -7,6 +7,7 @@
 import abc
 import datetime
 import itertools
+import logging
 import six
 import socket
 from threading import Thread
@@ -14,10 +15,8 @@ import time
 
 import requests
 
-import axon.common.config as conf
 from axon.common.consts import PACKET_SIZE
 from axon.traffic.resources import TCPRecord, UDPRecord, HTTPRecord
-from axon.traffic.recorder import SqliteDbRecorder
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -41,8 +40,8 @@ class Client(object):
 
 
 class TCPClient(Client):
-    def __init__(self, source, destination, port, connected=True,
-                 action=1, recorder=None, request_count=1):
+    def __init__(self, source, destination, port, record_queue,
+                 connected=True, action=1, request_count=1):
         """
         Client to send TCP requests
         :param source: source ip
@@ -56,17 +55,18 @@ class TCPClient(Client):
         :param action: whether traffic will be accepted or rejected by server
                       i.e. 0 for reject and 1 for allow
         :type action: int
-        :param recorder: recorder object which will record the data
-        :type recorder: TrafficRecorder
+        :param record_queue: traffic record queue
+        :type record_queue: queue.Queue
         """
         self._source = source
         self._port = port
         self._destination = destination
         self._start_time = None
-        self._recorder = recorder if recorder else SqliteDbRecorder()
+        self._record_queue = record_queue
         self._request_count = request_count
         self._connected = connected
         self._action = action
+        self.log = logging.getLogger(__name__)
 
     def _create_socket(self, address_family=socket.AF_INET,
                        socket_type=socket.SOCK_STREAM):
@@ -132,12 +132,18 @@ class TCPClient(Client):
         :return: None
         """
         success = self.is_traffic_successful(success)
-        if self._recorder:
-            record = TCPRecord(
-                self._source, self._destination, self._port,
-                self._get_latency(),
-                error, success, self._connected)
-            self._recorder.record_traffic(record)
+        record = TCPRecord(
+            self._source, self._destination, self._port,
+            self._get_latency(),
+            error, success, self._connected)
+        try:
+            self._record_queue.put(record)
+        except Exception:
+            self.log.exception(
+                "Exception in adding TCP record for src {0} "
+                "and dst {1} to traffic queue {2}".format(self._source,
+                                                          self._destination,
+                                                          self._record_queue))
 
     def ping(self):
         payload = 'Dinkirk'.encode()
@@ -189,11 +195,17 @@ class UDPClient(TCPClient):
         :return: None
         """
         success = self.is_traffic_successful(success)
-        if self._recorder:
-            record = UDPRecord(
-                self._source, self._destination, self._port,
-                self._get_latency(), error, success, self._connected)
-            self._recorder.record_traffic(record)
+        record = UDPRecord(
+            self._source, self._destination, self._port,
+            self._get_latency(), error, success, self._connected)
+        try:
+            self._record_queue.put(record)
+        except Exception:
+            self.log.exception(
+                "Exception in adding UDP record for src {0} "
+                "and dst {1} to traffic queue {2}".format(self._source,
+                                                          self._destination,
+                                                          self._record_queue))
 
 
 class HTTPClient(TCPClient):
@@ -216,11 +228,17 @@ class HTTPClient(TCPClient):
         :return: None
         """
         success = self.is_traffic_successful(success)
-        if self._recorder:
-            record = HTTPRecord(
-                self._source, self._destination, self._port,
-                self._get_latency(), error, success, self._connected)
-            self._recorder.record_traffic(record)
+        record = HTTPRecord(
+            self._source, self._destination, self._port,
+            self._get_latency(), error, success, self._connected)
+        try:
+            self._record_queue.put(record)
+        except Exception:
+            self.log.exception(
+                "Exception in adding HTTP record for src {0} "
+                "and dst {1} to traffic queue {2}".format(self._source,
+                                                          self._destination,
+                                                          self._record_queue))
 
     def ping(self):
         for _ in range(self._request_count):
@@ -234,11 +252,11 @@ class HTTPClient(TCPClient):
 
 class TrafficClient(object):
 
-    def __init__(self, src, destinations, request_rate=100, recorder=None):
+    def __init__(self, src, destinations, record_queue, request_rate=100):
         self._src = src
         self._request_rate = min(request_rate, len(destinations))
         self._destinations = itertools.cycle(destinations)
-        self._recorder = recorder if recorder else conf.TRAFFIC_RECORDER
+        self._record_queue = record_queue
 
     def _send_traffic(self):
         threads = []
@@ -248,16 +266,16 @@ class TrafficClient(object):
                 next(self._destinations)
             if protocol == "TCP":
                 client = TCPClient(
-                    self._src, endpoint, port,
-                    connected, action, self._recorder)
+                    self._src, endpoint, port, self._record_queue,
+                    connected, action)
             elif protocol == "UDP":
                 client = UDPClient(
-                    self._src, endpoint, port,
-                    connected, action, self._recorder)
+                    self._src, endpoint, port, self._record_queue,
+                    connected, action)
             elif protocol == "HTTP":
                 client = HTTPClient(
-                    self._src, endpoint, port,
-                    connected, action, self._recorder)
+                    self._src, endpoint, port, self._record_queue,
+                    connected, action)
             else:
                 raise RuntimeError("Invalid protocol name %s" % protocol)
             thread = Thread(target=client.ping)

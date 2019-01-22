@@ -72,7 +72,10 @@ if __name__ == "__main__":
             print("Checking failure count for host - %s" % host)
             failure_count = client.stats.get_failure_count(
                 start_time=start_time, end_time=end_time)
+            success_count = client.stats.get_success_count(
+                start_time=start_time, end_time=end_time)
             print("Failure Count = %s " % failure_count)
+            print("sucess Count = %s " % success_count)
             if failure_count != 0:
                 raise RuntimeError("Traffic is failing."
                                    "Failure count for "

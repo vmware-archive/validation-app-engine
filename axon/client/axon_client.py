@@ -58,23 +58,31 @@ class TrafficManger(Manager):
 
 class StatsManager(Manager):
 
+    def get_traffic_stats(self, start_time=None, end_time=None):
+        return self._client.stats.get_traffic_stats(
+            start_time=start_time, end_time=end_time)
+
+    def get_avg_latency(self, start_time=None, end_time=None):
+        return self._client.stats.get_avg_latency(
+            start_time=start_time, end_time=end_time)
+
     def get_failure_count(self, start_time=None, end_time=None,
-                          destination=None, port=None):
+                          destination=None, port=None, source=None):
         return self._client.stats.get_failure_count(
             start_time=start_time, end_time=end_time,
-            destination=destination, port=port)
+            destination=destination, port=port, source=source)
 
     def get_success_count(self, start_time=None, end_time=None,
-                          destination=None, port=None):
+                          destination=None, port=None, source=None):
         return self._client.stats.get_success_count(
             start_time=start_time, end_time=end_time,
-            destination=destination, port=port)
+            destination=destination, port=port, source=source)
 
     def get_failures(self, start_time=None, end_time=None,
-                     destination=None, port=None):
+                     destination=None, port=None, source=None):
         return self._client.stats.get_failures(
             start_time=start_time, end_time=end_time,
-            destination=destination, port=port)
+            destination=destination, port=port, source=source)
 
 
 class NamespaceManager(Manager):

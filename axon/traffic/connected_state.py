@@ -8,8 +8,8 @@ import abc
 import logging
 import six
 
-from axon.db.local import session_scope
-from axon.db.local.repository import Repositories
+from axon.db.sql.config import session_scope
+from axon.db.sql.repository import Repositories
 
 
 @six.add_metaclass(abc.ABCMeta)
