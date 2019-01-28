@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# Copyright (c) 2019 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: BSD-2 License
+# The full license information can be found in LICENSE.txt
+# in the root directory of this project.
+
 """
 This handles a great deal of the complexity embodied in writing queriable data
 to riak.  The interface defined here combines some aspects of sqlalchemy's
