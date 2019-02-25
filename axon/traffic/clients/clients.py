@@ -102,7 +102,7 @@ class TCPClient(Client):
         try:
             sock.send(payload)
             sock.recv(PACKET_SIZE)
-        except Exception as e:
+        except Exception:
             raise
         finally:
             sock.close()
@@ -178,7 +178,7 @@ class UDPClient(TCPClient):
         try:
             sock.sendto(payload, (self._destination, self._port))
             sock.recvfrom(PACKET_SIZE)
-        except Exception as e:
+        except Exception:
             raise
         finally:
             sock.close()

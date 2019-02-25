@@ -15,7 +15,6 @@ read, write, and delete records without necessarily worrying about the
 mechanics of interacting with riak
 """
 import json
-import os
 import six
 import time
 import uuid

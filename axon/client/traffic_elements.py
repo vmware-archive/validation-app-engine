@@ -180,4 +180,3 @@ class TrafficRule(object):
                'ALLOW' if self.action else 'DROP',
                self.protocol, self.port,
                self.src_eps, self.dst_eps)
-

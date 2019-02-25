@@ -237,7 +237,8 @@ class ConnectedStateProcessor(object):
         """
         return self._connected_state.get_connected_state(endpoint)
 
-    def delete_connected_state(self, endpoint=None, servers=None, clients=None):
+    def delete_connected_state(self, endpoint=None,
+                               servers=None, clients=None):
         """
         Delete connected state for an endpoint
         :param endpoint: endpoint ip

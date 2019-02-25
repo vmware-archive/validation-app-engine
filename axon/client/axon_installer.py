@@ -10,8 +10,6 @@ import os
 
 from fabric import Connection
 
-from axon.common import config as conf
-
 
 class AxonRemoteOperation(object):
     """
@@ -95,7 +93,7 @@ class AxonRemoteOperation(object):
         self.log.info("Check for source file existance..")
         if not os.path.exists(source):
             self.log.exception("source '%s' doesn't exists" % source)
-            raise
+            raise RuntimeError
 
         with self.remote_connection() as conn:
             self.log.info("copy file..")
@@ -190,7 +188,7 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
         """
         if not os.path.exists(sdist_package_path):
             self.log.exception("path '%s' doesn't exist." % sdist_package_path)
-            raise
+            raise RuntimeError
         filename = os.path.basename(sdist_package_path)
         with self.remote_connection() as conn:
             self.log.info("Installing pywin32 in remote windows machine.")
@@ -218,7 +216,7 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
         """
         if not os.path.exists(requirement_file):
             self.log.exception("Path '%s' doesn't exist." % requirement_file)
-            raise
+            raise RuntimeError
         with self.remote_connection() as conn:
             pre_packages = ["pywin32"]
             for pre_package in pre_packages:
@@ -310,11 +308,11 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
         """
         if not os.path.exists(sdist_package_path):
             self.log.exception("path '%s' doesn't exist." % sdist_package_path)
-            raise
+            raise RuntimeError
         filename = os.path.basename(sdist_package_path)
         with self.remote_connection() as conn:
             # In case service is already running, we have to stop that
-            # TODO(raies): Need to implement in clean way later
+            # TODO(mraies): Need to implement in clean way later
             try:
                 self.remote_stop_axon()
             except Exception:
@@ -336,7 +334,7 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
         """
         if not os.path.exists(requirement_file):
             self.log.exception("Path '%s' doesn't exist." % requirement_file)
-            raise
+            raise RuntimeError
         with self.remote_connection() as conn:
             # Prerequirements
             conn.run('sudo apt-get install python-setuptools -y --force-yes')
@@ -370,7 +368,7 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
         if not os.path.exists(distribuion_package_path):
             msg = "path '%s' doesn't exist." % distribuion_package_path
             self.log.exception(msg)
-            raise
+            raise RuntimeError
         filename = os.path.basename(distribuion_package_path)
 
         # Derive os_type from installer package itself
@@ -391,7 +389,7 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
                 self.log.info("Installation successful.")
             else:
                 self.log.exception("No valid dist (.rpm or .deb) found.")
-                raise
+                raise RuntimeError
 
     def remote_reload_daemon(self):
         """
@@ -440,28 +438,31 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
 
 
 if __name__ == "__main__":
-    remote_password = "Admin!Admin1998"
-    axn_linux = AxonRemoteOperationLinux('10.59.88.100',
+    remote_password = "my_password"
+    axn_linux = AxonRemoteOperationLinux('1.2.3.4',
                                          remote_user='ubuntu',
-#                                         gw_host='10.59.84.202',
-#                                         gw_user='ubuntu',
+                                         gw_host='1.2.3.5',
+                                         gw_user='ubuntu',
                                          remote_password=remote_password)
 
-    axn_win = AxonRemoteOperationWindows('10.59.88.102',
+    axn_win = AxonRemoteOperationWindows('2.3.4.5',
                                          remote_user='Administrator',
-#                                         gw_host='10.59.84.202',
-#                                         gw_user='ubuntu',
+                                         gw_host='2.3.4.6',
+                                         gw_user='ubuntu',
                                          remote_password=remote_password)
     # Axon on linux Steps-
     # 1. copy and install requirements.txt
-    # axn_linux.remote_install_requirements('/var/lib/automation/packages/axon_requirements.txt')
+    requirement_file = '/var/lib/automation/packages/axon_requirements.txt'
+    axn_linux.remote_install_requirements(requirement_file)
     # 2. Install axon on ubuntu machine using debian
-    # axn_linux.remote_install_distribution('/var/lib/automation/packages/axon_service.deb')
+    debian_file = '/var/lib/automation/packages/axon_service.deb'
+    axn_linux.remote_install_distribution(debian_file)
 
     # Axon on windows Steps.
     # 1. install using sdist distribution package
-    # axn_win.remote_install_sdist('/var/lib/automation/packages/axon_service.tar.gz')
+    tarball_file = '/var/lib/automation/packages/axon_service.tar.gz'
+    # axn_win.remote_install_sdist(tarball_file)
     # 2. register service in service manager
-    # axn_win.remote_register_axon()
+    axn_win.remote_register_axon()
     # 3. start service
-    # axn_win.remote_start_axon()
+    axn_win.remote_start_axon()

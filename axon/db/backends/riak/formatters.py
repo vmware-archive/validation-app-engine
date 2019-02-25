@@ -605,7 +605,8 @@ def uuids_as_list(attrname):
     Returns the UUIDs of objects in attrname
     """
     return (lambda self, value: [operator.attrgetter('id')(obj)
-                                 for obj in operator.attrgetter(attrname)(self)])
+                                 for obj in operator.attrgetter(
+            attrname)(self)])
 
 
 def attrs_as_dict(attrs):

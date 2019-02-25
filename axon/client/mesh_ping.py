@@ -11,7 +11,7 @@ import sys
 import ipaddr
 
 from axon.client.utils import create_mesh_ping_topo_from_cidr
-from axon.client.cloud_traffic_controller import CloudTrafficController
+from axon.client.basic_traffic_controller import BasicTrafficController
 
 
 def build_parser():
@@ -24,7 +24,7 @@ def build_parser():
 def start_traffic(cidr):
     network = ipaddr.IPNetwork(six.text_type(cidr)).iterhosts()
     rule_list = create_mesh_ping_topo_from_cidr(list(network))
-    controller = CloudTrafficController()
+    controller = BasicTrafficController()
     controller.register_traffic(rule_list)
     controller.restart_traffic()
 
@@ -41,5 +41,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
-

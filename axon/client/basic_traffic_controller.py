@@ -17,7 +17,7 @@ def register_traffic(server, rule, proxy_host):
     try:
         with AxonClient(server, proxy_host=proxy_host) as client:
             client.traffic.register_traffic([rule.as_dict()])
-    except:
+    except Exception:
         log.exception("Traffic push on endpoint %s failed" % server)
         return False
     return True
@@ -27,7 +27,7 @@ def unregister_traffic(server, rule, proxy_host):
     try:
         with AxonClient(server, proxy_host=proxy_host) as client:
             client.traffic.unregister_traffic([rule.as_dict()])
-    except:
+    except Exception:
         log.exception("Traffic push on endpoint %s failed" % server)
         return False
     return True
@@ -37,7 +37,7 @@ def start_servers(server, proxy_host):
     try:
         with AxonClient(server, proxy_host=proxy_host) as client:
             client.traffic.start_servers()
-    except:
+    except Exception:
         log.exception("Starting servers on endpoint %s failed" % server)
         return False
     return True
@@ -47,7 +47,7 @@ def start_clients(server, proxy_host):
     try:
         with AxonClient(server, proxy_host=proxy_host) as client:
             client.traffic.start_clients()
-    except:
+    except Exception:
         log.exception("Starting clients on endpoint %s failed" % server)
         return False
     return True
@@ -57,7 +57,7 @@ def stop_servers(server, proxy_host):
     try:
         with AxonClient(server, proxy_host=proxy_host) as client:
             client.traffic.stop_servers()
-    except:
+    except Exception:
         log.exception("Stopping servers on endpoint %s failed" % server)
         return False
     return True
@@ -67,7 +67,7 @@ def stop_clients(server, proxy_host):
     try:
         with AxonClient(server, proxy_host=proxy_host) as client:
             client.traffic.stop_clients()
-    except:
+    except Exception:
         log.exception("Stopping clients on endpoint %s failed" % server)
         return False
     return True

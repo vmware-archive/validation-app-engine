@@ -75,6 +75,7 @@ class Repositories(object):
         record = models.ConnectedState(**cs_dict)
         session.add(record)
 
+
 class ConnectedStateRepository(BaseRepository):
     model_class = models.ConnectedState
 

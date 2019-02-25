@@ -183,7 +183,7 @@ class DataCenterTrafficController(TrafficController):
         if not servers:
             return
         pool = ThreadPool(50)
-        params = [(servers, self._gw_host) for servers in servers]
+        params = [(server, self._gw_host) for server in servers]
         pool.map(start_servers, params)
         pool.close()
         pool.join()

@@ -230,9 +230,10 @@ class RootNsServerManager(ServerManager):
                                      (conf[1], conf[0]))
                     self._server_registry.remove_server(
                         self.ROOT_NAMESPACE_NAME, conf[0], conf[1])
-            except Exception as e:
+            except Exception:
                 self.log.exception(
-                    "Stopping %s server on port %s failed" % (conf[1], conf[0]))
+                    "Stopping %s server on port %s failed" %
+                    (conf[1], conf[0]))
 
     def list_servers(self):
         servers = [(ns, conf) for ns, conf_server_map in
@@ -252,7 +253,6 @@ class NamespaceServerManager(RootNsServerManager):
     """
     Class which manages servers in a Given Namespace
     """
-
     NAMESPACE_PATH = '/var/run/netns/'
 
     def __init__(self, namespace):
@@ -377,7 +377,7 @@ class RootNsClientManager(ClientManager):
                 self._client_registry.remove_client(self.ROOT_NAMESPACE_NAME)
             else:
                 self.log.warning("Client is not running in root namespace")
-        except Exception as e:
+        except Exception:
             self.log.exception(
                 "Stopping client failed in namespace %s" %
                 self.ROOT_NAMESPACE_NAME)
@@ -391,9 +391,9 @@ class RootNsClientManager(ClientManager):
             try:
                 client.stop()
                 self._client_registry.remove_client(namespace)
-            except Exception as e:
+            except Exception:
                 self.log.exception("Stopping client failed in namespace %s" %
-                self.ROOT_NAMESPACE_NAME)
+                                   self.ROOT_NAMESPACE_NAME)
 
 
 class NamespaceClientManager(RootNsClientManager):
@@ -438,6 +438,6 @@ class NamespaceClientManager(RootNsClientManager):
             else:
                 self.log.warning("Client is not running in namespace %s" %
                                  self._ns)
-        except Exception as e:
+        except Exception:
             self.log.exception("Stopping client failed in namespace %s" %
                                self._ns)

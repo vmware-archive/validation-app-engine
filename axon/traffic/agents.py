@@ -10,14 +10,15 @@ from axon.traffic.connected_state import ConnectedStateProcessor, \
     DBConnectedState
 from axon.traffic.manager import RootNsServerManager, NamespaceServerManager,\
     NamespaceClientManager, RootNsClientManager
-from axon.utils.network_utils import NamespaceManager, Namespace,\
-    InterfaceManager
+from axon.utils.network_utils import NamespaceManager, InterfaceManager
 import axon.common.config as axon_config
+
 
 class AxonRootNamespaceServerAgent(object):
     """
     Launch Servers in Root Namespace
     """
+
     def __init__(self):
         self.mngrs_map = {}
         self.connected_state = ConnectedStateProcessor(DBConnectedState())

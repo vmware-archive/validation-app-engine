@@ -12,7 +12,7 @@ from axon.traffic.recorder import RiakRecorder
 
 AXON_PORT = 5678
 LINUX_OS = "Linux" in platform.uname()
-LOG_DIR = "/var/log/axon" if LINUX_OS else "C:\\axon\log"
+LOG_DIR = "/var/log/axon" if LINUX_OS else "C:\\axon\\log"
 LOG_FILE = "axon.log"
 CLOUD_LINUX_INTERFACE = 'nsx-eth0'
 CLOUD_WINDOWS_INTERFACE = 'Ethernet0'
@@ -63,6 +63,3 @@ RIAK_PORT = os.environ.get("RIAK_PORT")
 TRAFFIC_RECORDER = None
 if HELPER_IP and TEST_ID and RIAK_PORT:
     TRAFFIC_RECORDER = RiakRecorder(HELPER_IP, RIAK_PORT, TEST_ID)
-
-
-

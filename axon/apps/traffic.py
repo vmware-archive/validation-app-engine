@@ -5,7 +5,6 @@
 # in the root directory of this project.
 
 import logging
-import threading
 
 from axon.traffic.connected_state import ConnectedStateProcessor, \
     DBConnectedState

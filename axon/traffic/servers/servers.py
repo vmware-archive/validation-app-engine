@@ -128,7 +128,7 @@ class IperfServer(Server):
         command = "iperf3 --server --port %d --bind %s" % \
                   (self._port, self._source)
         if self._protocol == "UDP":
-            command += "--u"
+            command += " --u"
         self._p_child = subprocess.Popen(
             command, shell=True, stdout=subprocess.PIPE,
             preexec_fn=os.setsid)
@@ -143,31 +143,31 @@ class IperfServer(Server):
 
 
 def create_server_class(protocol, port, source, server_type='socket'):
-        """
-        Create server object
-        :param protocol: protocol on which server works
-        :type protocol: str
-        :param port: port on which server listen
-        :type port: int
-        :param server_type: socket server or iperf server
-        :type server_type: int
-        :return: Server object
-        :rtype: Server
-        """
-        if protocol == "TCP" and server_type == "socket":
-            server_class = ThreadedTCPServer
-            args = ((source, int(port)), TCPRequestHandler)
-            kwargs = {}
-        elif protocol == "UDP" and server_type == "socket":
-            server_class = ThreadedUDPServer
-            args = ((source, int(port)), UDPRequestHandler)
-            kwargs = {}
-        elif server_type == "iperf":
-            server_class = IperfServer
-            args = (source, protocol, port)
-            kwargs = {}
-        else:
-            # TODO(pksingh) Write a proper exception class
-            raise ValueError("Invalid Value (%s, %s, %s) for Server" %
-                             (protocol, port, server_type))
-        return server_class, args, kwargs
+    """
+    Create server object
+    :param protocol: protocol on which server works
+    :type protocol: str
+    :param port: port on which server listen
+    :type port: int
+    :param server_type: socket server or iperf server
+    :type server_type: int
+    :return: Server object
+    :rtype: Server
+    """
+    if protocol == "TCP" and server_type == "socket":
+        server_class = ThreadedTCPServer
+        args = ((source, int(port)), TCPRequestHandler)
+        kwargs = {}
+    elif protocol == "UDP" and server_type == "socket":
+        server_class = ThreadedUDPServer
+        args = ((source, int(port)), UDPRequestHandler)
+        kwargs = {}
+    elif server_type == "iperf":
+        server_class = IperfServer
+        args = (source, protocol, port)
+        kwargs = {}
+    else:
+        # TODO(pksingh) Write a proper exception class
+        raise ValueError("Invalid Value (%s, %s, %s) for Server" %
+                         (protocol, port, server_type))
+    return server_class, args, kwargs

@@ -4,9 +4,7 @@
 # The full license information can be found in LICENSE.txt
 # in the root directory of this project.
 
-import ipaddr
 import logging
-import six
 from six.moves import queue as Queue
 import sys
 import threading
@@ -361,7 +359,7 @@ class WorkManager():
                 self.work_queue.join()
                 del self.work_queue
         finally:
-           pass
+            pass
 
         aborted = []
         for x in self._exceptions:

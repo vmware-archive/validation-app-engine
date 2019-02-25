@@ -9,6 +9,3 @@ SERVER_CONSTANTS = (
 ) = (
     100, 1024, True
 )
-
-
-
