@@ -195,7 +195,6 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
             conn.run('pip.exe install pywin32')
             self.log.info('Installation successful !!')
             # In case service is already running, we have to stop that
-            # TODO(raies): Need to implement in clean way later
             try:
                 self.remote_stop_axon()
             except Exception:
@@ -312,7 +311,6 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
         filename = os.path.basename(sdist_package_path)
         with self.remote_connection() as conn:
             # In case service is already running, we have to stop that
-            # TODO(mraies): Need to implement in clean way later
             try:
                 self.remote_stop_axon()
             except Exception:

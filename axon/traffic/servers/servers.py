@@ -167,7 +167,6 @@ def create_server_class(protocol, port, source, server_type='socket'):
         args = (source, protocol, port)
         kwargs = {}
     else:
-        # TODO(pksingh) Write a proper exception class
         raise ValueError("Invalid Value (%s, %s, %s) for Server" %
                          (protocol, port, server_type))
     return server_class, args, kwargs

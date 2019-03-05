@@ -138,7 +138,6 @@ class TCPClient(Client):
             self._recorder.record_traffic(record)
 
     def ping(self):
-        # TODO(pksingh) Decide on payload
         payload = 'Dinkirk'.encode()
         for _ in range(self._request_count):
             try:
@@ -154,7 +153,6 @@ class TCPClient(Client):
 class UDPClient(TCPClient):
 
     def ping(self):
-        # TODO(pksingh) Decide on payload
         payload = 'Dinkirk'.encode()
         for _ in range(self._request_count):
             try:

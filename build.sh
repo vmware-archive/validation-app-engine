@@ -31,3 +31,4 @@ cp -f ./dist/$sdist_package /var/lib/automation/packages/axon_service.tar.gz
 cp -f ./debian/dist/axon_service.deb /var/lib/automation/packages/
 cp -f ./requirements.txt /var/lib/automation/packages/axon_requirements.txt
 
+touch debian/dist/example.txt debian/opt/example.txt
