@@ -21,7 +21,7 @@ Why Required ?
 What is Validation App Engine ?
 *******************************
 
-    **validation-app-engine** a agent based distributed workload resource validation and monitoring engine that let's various
+    **validation-app-engine** an agent based distributed workload resource validation and monitoring engine that lets various
     quality and reliability engineering teams to validate their products at large scale.
     The remote agents can be programmed to generate resource patterns OR monitor resources and send back information
     to a central analytics layer for further analysis teams can make several inferences by analyzing the data generated.
