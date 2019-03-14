@@ -29,22 +29,22 @@ to a central analytics layer for further analysis teams can make several inferen
 
 Target Audiance
 ***************
-    * Quality Teams
-    * Performance Engineering Teams
-    * Chaos/Reliability Engineering Teams
-    * Development Teams
+* Quality Teams
+* Performance Engineering Teams
+* Chaos/Reliability Engineering Teams
+* Development Teams
 
 Key Highlights
 **************
-    * Framework agnostic.
-    * Platform agnostic (Windows / Linux).
-    * It also support validation against Linux network namespaces.
-    * Cloud agnostic (vSphere, AWS, Azure).
-    * Self-contained Repo / Binaries.
-    * Support for client / servers running on any port.
-    * Integration with any DB (natively works on SQLite DB and RiakDB).
-    * Utility for validating Traffic, Resource and Realization patterns.
-    * Build utilities on top of it to manage or monitor remote endpoints.
+* Framework agnostic.
+* Platform agnostic (Windows / Linux).
+* It also support validation against Linux network namespaces.
+* Cloud agnostic (vSphere, AWS, Azure).
+* Self-contained Repo / Binaries.
+* Support for client / servers running on any port.
+* Integration with any DB (natively works on SQLite DB and RiakDB).
+* Utility for validating Traffic, Resource and Realization patterns.
+* Build utilities on top of it to manage or monitor remote endpoints.
 
 
 Architecture
@@ -53,22 +53,21 @@ Architecture
         :width: 1000
         :alt: A screenshot showing Overall Architecture
 
+As per current architecture, it can support number of resources.
+Currently it supports only network resources, where it generates, validates and monitor network traffic.
+In future, other resources support can be added based on interfaces provided in the code.
+Under network resource it supports -
 
-    As per current architecture, it can support number of resources.
-    Currently it supports only network resources, where it generates, validates and monitor network traffic.
-    In future, other resources support can be added based on interfaces provided in the code.
-    Under network resource it supports -
-
-    * Distributed traffic generation
-    * Validating traffic patterns
-    * Traffic rule realization
-    * Local and central store of traffic stats.
+* Distributed traffic generation
+* Validating traffic patterns
+* Traffic rule realization
+* Local and central store of traffic stats.
 
 Installation
 ~~~~~~~~~~~~
-    Please refer `Installation Guide`_ for detailed installation.
+Please refer `Installation Guide`_ for detailed installation.
 
-    .. _Installation Guide: doc/INSTALL.rst
+.. _Installation Guide: doc/INSTALL.rst
 
 
 Network Resource Realization and Validation
@@ -76,23 +75,23 @@ Network Resource Realization and Validation
 
 Supported Protocols/Modes
 *************************
-    Protocols -
-        * TCP
-        * UDP
+Protocols -
+    * TCP
+    * UDP
 
-    Modes -
-        * Client
-        * Server
+Modes -
+    * Client
+    * Server
 
 Topology and workflow
 *********************
-    Please refer `Workflow Guide`_ for detailed description on basic topologies and workflow.
+Please refer `Workflow Guide`_ for detailed description on basic topologies and workflow.
 
-    .. _workflow guide: doc/topology_workflow.rst
+.. _workflow guide: doc/topology_workflow.rst
 
 
 How to validate traffic
 ***********************
-    Please refer `Example Traffic Validation Guide`_ for detailed example on how to generate, realize traffic rules and validate traffic.
+Please refer `Example Traffic Validation Guide`_ for detailed example on how to generate, realize traffic rules and validate traffic.
 
-    .. _Example Traffic Validation Guide: doc/how_to/how_to_validate_traffic.rst
+.. _Example Traffic Validation Guide: doc/how_to/how_to_validate_traffic.rst
