@@ -21,25 +21,21 @@ the same. Products need metrics to measure performance and reliability.
 What is Validation App Engine ?
 *******************************
 
-    **validation-app-engine** an agent based distributed workload resource validation and monitoring engine that lets various
-    quality and reliability engineering teams to validate their products at large scale.
-    The remote agents can be programmed to generate resource patterns OR monitor resources and send back information
-    to a central analytics layer for further analysis teams can make several inferences by analyzing the data generated.
+**validation-app-engine** an agent based distributed workload resource validation and monitoring engine that lets various
+quality and reliability engineering teams to validate their products at large scale.
+The remote agents can be programmed to generate resource patterns OR monitor resources and send back information
+to a central analytics layer for further analysis teams can make several inferences by analyzing the data generated.
 
 
 Target Audiance
 ***************
-    Audience::
+    * Quality Teams
+    * Performance Engineering Teams
+    * Chaos/Reliability Engineering Teams
+    * Development Teams
 
-        Quality Teams
-        Performance Engineering Teams
-        Chaos/Reliability Engineering Teams
-        Development Teams
-
-validation-app-engine Highlights
-********************************
-    Here are key highlights::
-
+Key Highlights
+**************
     * Framework agnostic.
     * Platform agnostic (Windows / Linux).
     * It also support validation against Linux network namespaces.
@@ -61,18 +57,18 @@ Architecture
     As per current architecture, it can support number of resources.
     Currently it supports only network resources, where it generates, validates and monitor network traffic.
     In future, other resources support can be added based on interfaces provided in the code.
-    Under network resource it supports::
+    Under network resource it supports -
 
-        * Distributed traffic generation
-        * Validating traffic patterns
-        * Traffic rule realization
-        * Local and central store of traffic stats.
+    * Distributed traffic generation
+    * Validating traffic patterns
+    * Traffic rule realization
+    * Local and central store of traffic stats.
 
 Installation
 ~~~~~~~~~~~~
-    Please refer `installation_guide`_ for detailed installation.
+    Please refer `Installation Guide`_ for detailed installation.
 
-    .. _installation_guide: doc/INSTALL.rst
+    .. _Installation Guide: doc/INSTALL.rst
 
 
 Network Resource Realization and Validation
@@ -80,26 +76,23 @@ Network Resource Realization and Validation
 
 Supported Protocols/Modes
 *************************
-    Following protocols and modes are supported as now.
-    Protocols::
-
+    Protocols -
         * TCP
         * UDP
 
-    Modes::
-
+    Modes -
         * Client
         * Server
 
 Topology and workflow
 *********************
-    Please refer `workflow_guide`_ for detailed description on basic topologies and workflow.
+    Please refer `Workflow Guide`_ for detailed description on basic topologies and workflow.
 
-    .. _workflow_guide: doc/topology_workflow.rst
+    .. _workflow guide: doc/topology_workflow.rst
 
 
 How to validate traffic
 ***********************
-    Please refer `example_traffic_validation_guide`_ for detailed example on how to generate, realize traffic rules and validate traffic.
+    Please refer `Example Traffic Validation Guide`_ for detailed example on how to generate, realize traffic rules and validate traffic.
 
-    .. _example_traffic_validation_guide: doc/how_to/how_to_validate_traffic.rst
+    .. _Example Traffic Validation Guide: doc/how_to/how_to_validate_traffic.rst
