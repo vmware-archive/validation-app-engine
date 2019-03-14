@@ -49,9 +49,9 @@ Key Highlights
 
 Architecture
 ~~~~~~~~~~~~
-    .. image:: doc/png/validation-app-engine-arcitecture.png
-        :width: 1000
-        :alt: A screenshot showing Overall Architecture
+.. image:: doc/png/validation-app-engine-arcitecture.png
+    :width: 1000
+    :alt: A screenshot showing Overall Architecture
 
 As per current architecture, it can support number of resources.
 Currently it supports only network resources, where it generates, validates and monitor network traffic.
