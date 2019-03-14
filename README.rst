@@ -9,14 +9,14 @@ Overview
 Why Required ?
 **************
 
-    Distributed Workload Resource Validation and Metrics Collection is a key aspect of scale testing today.
-    resources can be Network Resource, Memory Resource etc.
+Distributed Workload Resource Validation and Metrics Collection is a key aspect of scale testing today.
+resources can be Network Resource, Memory Resource etc.
 
-    Currently, available resource validators don't scale economically and are limited when it comes to customization.
-    Metrics and Analytics tools are also extremely expensive and do not always work with some products.
-    That may not be generating metrics that are compatible with the platform. Reliability and Serviceability
-    testing is not fully automated today as teams struggle to simulate user workloads and analyze the data from
-    the same. Products need metrics to measure performance and reliability.
+Currently, available resource validators don't scale economically and are limited when it comes to customization.
+Metrics and Analytics tools are also extremely expensive and do not always work with some products.
+That may not be generating metrics that are compatible with the platform. Reliability and Serviceability
+testing is not fully automated today as teams struggle to simulate user workloads and analyze the data from
+the same. Products need metrics to measure performance and reliability.
 
 What is Validation App Engine ?
 *******************************
