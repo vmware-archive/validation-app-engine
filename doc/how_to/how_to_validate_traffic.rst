@@ -86,8 +86,8 @@ Generate Traffic rules
             """
             Basic L2 Connectivity Test.
             """
-            def __init__(self, managed_host):
-                self.managed_host = managed_host
+            def __init__(self, managed_hosts):
+                self.managed_hosts = managed_hosts
 
             def _create_allow_rules_on_hosts(self, source, destinations):
                 rule_list = []
@@ -102,7 +102,7 @@ Generate Traffic rules
                                       Connected.CONNECTED, Action.ALLOW)))
                 return rule_list
 
-            def create_rule_with_given_hosts(self):
+            def create_rules_with_given_hosts(self):
                 """
                 Params:
                 managed_hosts: list of hosts which can access each other
@@ -113,15 +113,15 @@ Generate Traffic rules
                     # Form simplicity we are considering each host is sending traffic to other 10 destinations
                     managed_destinations = (self.managed_hosts[:index][::-1][:5] +
                                             self.managed_hosts[index+1: index+6])
-                    allow_rules = self._create_allow_rule_on_hosts(
+                    allow_rules = self._create_allow_rules_on_hosts(
                         host, managed_destinations)
                     rule_list.extend(allow_rules)
                 return rule_list
 
 
-        managed_host = ['1.2.3.4', '1.2.3.5', '1.2.3.6', '1.2.3.7']
-        basic_test_obj = BasicL2ConnectivityTest(managed_host)
-        traffic_rules = basic_test_obj.create_rule_with_given_hosts()
+        managed_hosts = ['1.2.3.4', '1.2.3.5', '1.2.3.6', '1.2.3.7']
+        basic_test_obj = BasicL2ConnectivityTest(managed_hosts)
+        traffic_rules = basic_test_obj.create_rules_with_given_hosts()
 
 
 Register traffic rules
@@ -168,7 +168,7 @@ Traffic Validation
         end_time = time.time
 
         client = AxonClient(host, proxy_host=proxy_host)
-        client.stats.get_success_count(start_time=start_time, end_time=end_time, x=None, port=None)
+        client.stats.get_success_count(start_time=start_time, end_time=end_time, destination=None, port=None)
         client.stats.get_failure_count(start_time=start_time, end_time=end_time, destination=None, port=None)
 
     In ideal case there should not be any failures in system.
