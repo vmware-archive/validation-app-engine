@@ -168,7 +168,7 @@ Traffic Validation
         end_time = time.time
 
         client = AxonClient(host, proxy_host=proxy_host)
-        client.stats.get_success_count(start_time=start_time, end_time=end_time, x=None, port=None)
+        client.stats.get_success_count(start_time=start_time, end_time=end_time, destination=None, port=None)
         client.stats.get_failure_count(start_time=start_time, end_time=end_time, destination=None, port=None)
 
     In ideal case there should not be any failures in system.
