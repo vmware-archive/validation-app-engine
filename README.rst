@@ -7,32 +7,38 @@ Overview
 ~~~~~~~~
 
 Why Required ?
-==============
+**************
 
-Distributed Workload Resource Validation and Metrics Collection is a key aspect of scale testing today. Resources can be Network Resource, Memory Resource etc.
+    Distributed Workload Resource Validation and Metrics Collection is a key aspect of scale testing today.
+    resources can be Network Resource, Memory Resource etc.
 
-Currently, available resource validators don't scale economically and are limited when it comes to customization.
-Metrics and Analytics tools are also extremely expensive and do not always work with some products.
-That may not be generating metrics that are compatible with the platform. Reliability and Serviceability testing is not fully automated today as teams struggle to simulate user workloads and analyze the data from the same. Products need metrics to measure performance and reliability.
+    Currently, available resource validators don't scale economically and are limited when it comes to customization.
+    Metrics and Analytics tools are also extremely expensive and do not always work with some products.
+    That may not be generating metrics that are compatible with the platform. Reliability and Serviceability
+    testing is not fully automated today as teams struggle to simulate user workloads and analyze the data from
+    the same. Products need metrics to measure performance and reliability.
 
 What is Validation App Engine ?
-===============================
+*******************************
 
-**validation-app-engine** an agent based distributed workload resource validation and monitoring engine that lets various
-quality and reliability engineering teams to validate their products at large scale.
-The remote agents can be programmed to generate resource patterns OR monitor resources and send back information
-to a central analytics layer for further analysis teams can make several inferences by analyzing the data generated.
+    **validation-app-engine** an agent based distributed workload resource validation and monitoring engine that lets various
+    quality and reliability engineering teams to validate their products at large scale.
+    The remote agents can be programmed to generate resource patterns OR monitor resources and send back information
+    to a central analytics layer for further analysis teams can make several inferences by analyzing the data generated.
+
 
 Target Audiance
-===============
+***************
+    Audience::
 
-* Quality Teams
-* Performance Engineering Teams 
-* Chaos/Reliability Engineering Teams
-* Development Teams
+        Quality Teams
+        Performance Engineering Teams
+        Chaos/Reliability Engineering Teams
+        Development Teams
 
-Key Highlights
-==============
+validation-app-engine Highlights
+********************************
+    Here are key highlights::
 
     * Framework agnostic.
     * Platform agnostic (Windows / Linux).
@@ -43,6 +49,7 @@ Key Highlights
     * Integration with any DB (natively works on SQLite DB and RiakDB).
     * Utility for validating Traffic, Resource and Realization patterns.
     * Build utilities on top of it to manage or monitor remote endpoints.
+
 
 Architecture
 ~~~~~~~~~~~~
@@ -67,12 +74,13 @@ Installation
 
     .. _installation_guide: doc/INSTALL.rst
 
+
 Network Resource Realization and Validation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Supported Protocols/Modes
-=========================
-
+*************************
+    Following protocols and modes are supported as now.
     Protocols::
 
         * TCP
