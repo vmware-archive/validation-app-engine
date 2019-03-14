@@ -1,83 +1,70 @@
+# How To Contribute?
+
+## Table of Contents
+- [Overview](#id-section1)
+- [Standard contribution process](#id-section2)
+- [Mandatory style checks](#id-section3)
+- [Mandatory unit tests and test runs](#id-section4)
 
 
-# Contributing to validation-app-engine
+<div id='id-section1'/>
 
-The validation-app-engine project team welcomes contributions from the community. If you wish to contribute code and you have not
-signed our contributor license agreement (CLA), our bot will update the issue when you open a Pull Request. For any
-questions about the CLA process, please refer to our [FAQ](https://cla.vmware.com/faq).
+## Overview
+This document explains, how to contribute to project validation-app-engine.
+If you want to contribute to a project validation-app-engine and make it better, your help is very welcome.
+validation-app-engine follows standard GitHub contribution process.
+Along with that this also recommends standard conding styles and unit tests.
 
-## Community
+<div id='id-section2'/>
 
-## Getting Started
+## Standard contribution process
 
-## Contribution Flow
+For contribution, validation-app-engine is following standard GitHub contribution process.
+We strongly recommend to follow the github contribution process from github official documents.
 
-This is a rough outline of what a contributor's workflow looks like:
+https://git-scm.com/book/en/v2/GitHub-Contributing-to-a-Project
 
-- Create a topic branch from where you want to base your work
-- Make commits of logical units
-- Make sure your commit messages are in the proper format (see below)
-- Push your changes to a topic branch in your fork of the repository
-- Submit a pull request
+However, few basic steps are given here which should be followed -
 
-Example:
+    #. New github 'Issue' must be opened for any new change/feature in the project.
+    #. Core Reviewers of the project will review the issue and approve it.
+    #. Once its approved, one will follow below detailed steps for contributions.
+    #. Create a fork of the validation-app-engine on Github.
+    #. Clone the fork on your local machine.
+    #. Remote repo on Github is called origin.
+    #. Add the original repository as a remote called upstream.
+    #. Create a new branch (from develop if it exists, else from master) to work on.
+    #. Implement/fix your feature, comment your code.
+    #. Follow the code style of the project.
+    #. Write unit test for your feature/fix.
+    #. Run unit test for entire suite.
+    #. Add or change the documentation as needed.
+    #. Squash your commits into a single commit with git's interactive rebase.
+    #. Push your branch to your fork on Github, the remote origin.
+    #. From your fork open a pull request in the correct branch.
+    #. Target the project's develop branch if there is one, else go for master.
+    #. If the maintainer requests further changes just push them to your branch.
+    #. The PR will be updated automatically.
+    #. Once the pull request is approved and merged you can pull the changes
+       from upstream to your local repo.
 
-``` shell
-git remote add upstream https://github.com/vmware/validation-app-engine.git
-git checkout -b my-new-feature master
-git commit -a
-git push origin my-new-feature
-```
+<div id='id-section3'/>
 
-### Staying In Sync With Upstream
+## Mandatory style checks
 
-When your branch gets out of sync with the vmware/master branch, use the following to update:
+After coding is done, python coding style checks should also be run and verified for success.
 
-``` shell
-git checkout my-new-feature
-git fetch -a
-git pull --rebase upstream master
-git push --force-with-lease origin my-new-feature
-```
+    $ tox -epep8
 
-### Updating pull requests
+<div id='id-section4'/>
 
-If your PR fails to pass CI or needs changes based on code review, you'll most likely want to squash these changes into
-existing commits.
+## Mandatory unit tests
 
-If your pull request contains a single commit or your changes are related to the most recent commit, you can simply
-amend the commit.
+After adding or updating code, contributor must write or update unit tests.
+All unit tests are written under directory - validation-app-engine/axon/tests.
+Newly added unit tests or updated unit tests must be run and verified for success using tox.
 
-``` shell
-git add .
-git commit --amend
-git push --force-with-lease origin my-new-feature
-```
+    How to run unit tests using tox::
 
-If you need to squash changes into an earlier commit, you can use:
-
-``` shell
-git add .
-git commit --fixup <commit>
-git rebase -i --autosquash master
-git push --force-with-lease origin my-new-feature
-```
-
-Be sure to add a comment to the PR indicating your new changes are ready to review, as GitHub does not generate a
-notification when you git push.
-
-### Code Style
-
-### Formatting Commit Messages
-
-We follow the conventions on [How to Write a Git Commit Message](http://chris.beams.io/posts/git-commit/).
-
-Be sure to include any related GitHub issue references in the commit message.  See
-[GFM syntax](https://guides.github.com/features/mastering-markdown/#GitHub-flavored-markdown) for referencing issues
-and commits.
-
-## Reporting Bugs and Creating Issues
-
-When opening a new issue, try to roughly follow the commit message format conventions above.
-
-## Repository Structure
+        $ tox -epy27
+        $ tox -epy35
