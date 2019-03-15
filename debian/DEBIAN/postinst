@@ -13,6 +13,7 @@ echo "" | sudo tee --append /etc/axon/axon.conf
 echo HELPER_IP=$HELPER_IP |sudo tee --append /etc/axon/axon.conf
 echo TEST_ID=$TEST_ID |sudo tee --append /etc/axon/axon.conf
 echo RIAK_PORT=$RIAK_PORT |sudo tee --append /etc/axon/axon.conf
+echo NAMESPACE_MODE=$NAMESPACE_MODE |sudo tee --append /etc/axon/axon.conf
 echo "copying axon service file to systemd"
 sudo cp /opt/axon/etc/axon.service /etc/systemd/system/axon.service
 echo "reloading daemon"
