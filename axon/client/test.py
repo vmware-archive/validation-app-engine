@@ -64,11 +64,16 @@ if __name__ == "__main__":
     controller = BasicTrafficController()
     controller.register_traffic(traffic_rules)
     controller.restart_traffic()
-    start_time = time.time
-    time.sleep(180)
-    end_time = time.time
+    start_time = time.time()
+    time.sleep(30)
+    end_time = time.time()
     for host in managed_hosts:
         with AxonClient(host) as client:
+            print("Checking failure count for host - %s" % host)
             failure_count = client.stats.get_failure_count(
                 start_time=start_time, end_time=end_time)
-            print("Failure count = %s " % failure_count)
+            print("Failure Count = %s " % failure_count)
+            if failure_count != 0:
+                raise RuntimeError("Traffic is failing."
+                                   "Failure count for "
+                                   "host %s is %s" % (host, failure_count))
