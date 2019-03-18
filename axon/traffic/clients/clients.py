@@ -6,7 +6,6 @@
 
 import abc
 import datetime
-import logging
 import itertools
 import six
 import socket
@@ -199,7 +198,6 @@ class UDPClient(TCPClient):
 
 class HTTPClient(TCPClient):
 
-
     def _send_receive(self):
         try:
             response = requests.get('http://%s:%s' %
@@ -209,7 +207,7 @@ class HTTPClient(TCPClient):
                 raise Exception(
                     "HTTP Request failed with status %s" %
                     response.status_code)
-        except:
+        except Exception:
             raise
 
     def record(self, success=True, error=None):
@@ -228,7 +226,7 @@ class HTTPClient(TCPClient):
         for _ in range(self._request_count):
             try:
                 self._start_time = datetime.datetime.now()
-                success = self._send_receive()
+                self._send_receive()
                 self.record()
             except Exception as e:
                 self.record(success=False, error=str(e))

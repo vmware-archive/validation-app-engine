@@ -23,7 +23,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        message =  "Hello From AXON HTTP Server \n"
+        message = "Hello From AXON HTTP Server \n"
         self.wfile.write(message.encode('utf-8'))
         return
 
