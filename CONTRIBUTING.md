@@ -13,7 +13,7 @@
 This document explains, how to contribute to project validation-app-engine.
 If you want to contribute to a project validation-app-engine and make it better, your help is very welcome.
 validation-app-engine follows standard GitHub contribution process.
-Along with that this also recommends standard conding styles and unit tests.
+Along with that this also recommends standard conding styles and unit tests. Before you start working with validation-app-engine, please read our [Developer Certificate of Origin](https://cla.vmware.com/dco). All contributions to this repository must be signed as described on that page. Your signature certifies that you wrote the patch or have the right to pass it on as an open-source patch.
 
 <div id='id-section2'/>
 
