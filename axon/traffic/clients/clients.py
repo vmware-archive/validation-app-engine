@@ -12,9 +12,11 @@ import socket
 from threading import Thread
 import time
 
+import requests
+
 import axon.common.config as conf
 from axon.common.consts import PACKET_SIZE
-from axon.traffic.resources import TCPRecord, UDPRecord
+from axon.traffic.resources import TCPRecord, UDPRecord, HTTPRecord
 from axon.traffic.recorder import SqliteDbRecorder
 
 
@@ -194,6 +196,42 @@ class UDPClient(TCPClient):
             self._recorder.record_traffic(record)
 
 
+class HTTPClient(TCPClient):
+
+    def _send_receive(self):
+        try:
+            response = requests.get('http://%s:%s' %
+                                    (self._destination, self._port))
+            success = response.status_code == requests.codes.ok
+            if not success:
+                raise Exception(
+                    "HTTP Request failed with status %s" %
+                    response.status_code)
+        except Exception:
+            raise
+
+    def record(self, success=True, error=None):
+        """
+        Record the traffic to data source
+        :return: None
+        """
+        success = self.is_traffic_successful(success)
+        if self._recorder:
+            record = HTTPRecord(
+                self._source, self._destination, self._port,
+                self._get_latency(), error, success, self._connected)
+            self._recorder.record_traffic(record)
+
+    def ping(self):
+        for _ in range(self._request_count):
+            try:
+                self._start_time = datetime.datetime.now()
+                self._send_receive()
+                self.record()
+            except Exception as e:
+                self.record(success=False, error=str(e))
+
+
 class TrafficClient(object):
 
     def __init__(self, src, destinations, request_rate=100, recorder=None):
@@ -212,10 +250,16 @@ class TrafficClient(object):
                 client = TCPClient(
                     self._src, endpoint, port,
                     connected, action, self._recorder)
-            if protocol == "UDP":
+            elif protocol == "UDP":
                 client = UDPClient(
                     self._src, endpoint, port,
                     connected, action, self._recorder)
+            elif protocol == "HTTP":
+                client = HTTPClient(
+                    self._src, endpoint, port,
+                    connected, action, self._recorder)
+            else:
+                raise RuntimeError("Invalid protocol name %s" % protocol)
             thread = Thread(target=client.ping)
             thread.daemon = True
             thread.start()
