@@ -4,78 +4,68 @@
 Example Setup
 ********************
 
-    **Mesh Traffic Topology for TCP/UDP***
+**Mesh Traffic Topology for TCP/UDP***
+Lets assume we have one setup having few workloads in given network.
+All the workloads need to send TCP and UDP traffics to each other.
+On this given setup and traffic needs to be validated against pre set traffic rules
+i.e. As it is a mesh Topology for TCP/UDP, for validation we need to check that every single host should communicate to other host and traffic should be allow.
 
-    Lets assume we have one setup having few workloads in given network.
-    All the workloads need to send TCP and UDP traffics to each other.
+.. image:: ../png/example_mesh_topology.png
+    :width: 600
+    :alt: Example mesh topology for TCP/UDP
 
-    On this given setup and traffic needs to be validated against pre set traffic rules
+Below is example setup topology::
 
-    i.e. As it is a mesh Topology for TCP/UDP, for validation we need to check that every single host should communicate to other host and traffic should be allow.
+    * Runner machine - This VM is used to initialize axon traffic using client APIs.
+    * In below setup, runner VM can be any of workloads available in network or standalone machine.
+    * All the workload VMs must have accessibility from runner machine.
 
+validation-app-engine requirements::
 
-    .. image:: ../png/example_mesh_topology.png
-        :width: 600
-        :alt: Example mesh topology for TCP/UDP
-
-
-    Below is example setup topology::
-
-        * Runner machine - This VM is used to initialize axon traffic using client APIs.
-        * In below setup, runner VM can be any of workloads available in network or standalone machine.
-        * All the workload VMs must have accessibility from runner machine.
-
-
-    validation-app-engine requirements::
-
-        * All the VMs (Including runner) must have installed validation-app-engine. (Please refer Installation guide for validation-app-engine installation.)
-
-        * On Runner, axon service is not required to run although installation is required.
-
-        * On workload VMs axon service must be running (Please Installation guide for service start etc.)
+    * All the VMs (Including runner) must have installed validation-app-engine. (Please refer Installation guide for validation-app-engine installation.)
+    * On Runner, axon service is not required to run although installation is required.
+    * On workload VMs axon service must be running (Please Installation guide for service start etc.)
 
 Traffic Validation
 ******************
 
-        * Generate Traffic rules (Axon User will be owning this)
-        * Register traffic rules to Axon
-        * Start Traffic
-        * Verify traffic validation
+* Generate Traffic rules (Axon User will be owning this)
+* Register traffic rules to Axon
+* Start Traffic
+* Verify traffic validation
 
 
 Generate Traffic rules
 ~~~~~~~~~~~~~~~~~~~~~~
-    * Traffic rule generation is left to axon user.
-    * Each user will have their own kind of setup and they will need thier own kind of traffic flow.
-    * For example, which VM is connected to which other VMs, whether traffic is allowed between VMs or not, these kind of information is upto the setup adminstrator.
-    * APIs are exposed to create Rules, user only needs to create a set of rules using exposed API and then feed it to validation-app-engine.
-    * Thus validation-app-engine is pushed with traffic rules created in predefined form.
-    * So rule creation is left to the the user and should be in this format::
+* Traffic rule generation is left to axon user.
+* Each user will have their own kind of setup and they will need thier own kind of traffic flow.
+* For example, which VM is connected to which other VMs, whether traffic is allowed between VMs or not, these kind of information is upto the setup adminstrator.
+* APIs are exposed to create Rules, user only needs to create a set of rules using exposed API and then feed it to validation-app-engine.
+* Thus validation-app-engine is pushed with traffic rules created in predefined form.
+* So rule creation is left to the the user and should be in this format::
 
-        TrafficRule(Endpoint(source), Endpoint(destination), Port(12345), Protocol.TCP, Connected.CONNECTED, Action.ALLOW)
+    TrafficRule(Endpoint(source), Endpoint(destination), Port(12345), Protocol.TCP, Connected.CONNECTED, Action.ALLOW)
+    where -
+    * source  - source IP
+    * destination -   destination IP
+    * Port - destination port, where server is running
+    * Protocol - TCP/UDP
+    * connected - Path exists between source and destination.
+    * action - Allow traffic or drop traffic
 
-        where -
-            * source  - source IP
-            * destination -   destination IP
-            * Port - destination port, where server is running
-            * Protocol - TCP/UDP
-            * connected - Path exists between source and destination.
-            * action - Allow traffic or drop traffic
-
-             If connected is 'Connected.DISCONNECTED', means path doesn't exits between two VMs.
-             And in this case action will not be considered.
-
+    If connected is 'Connected.DISCONNECTED', means path doesn't exits between two VMs.
+    And in this case action will not be considered.
 
 
-    **Example of rule creation in above given example can be explained as below**::
+**Example of rule creation in above given example can be explained as below**::
 
         ##############################################################################################################################################
         # we have all the host details in given topology.                                                                                            #
         # Managed Hosts : hosts which we can access each other.                                                                                      #
-                                                                                                                                                     #
+        #                                                                                                                                            #
         # So pseudo example of single rule will look like -                                                                                          #
-                                                                                                                                                     #
-        # ['managed host 1' has (TCP, 12345) access of 'managed host 2', 'managed host 3' and 'managed host 4' #
+        #                                                                                                                                            #
+        # ['managed host 1' has (TCP, 12345) access of 'managed host 2', 'managed host 3' and 'managed host 4'                                       #
         ##############################################################################################################################################
 
         from axon.client.traffic_elements import TrafficRule, \
@@ -127,11 +117,11 @@ Generate Traffic rules
 Register traffic rules
 ~~~~~~~~~~~~~~~~~~~~~~
 
-    In step 1 we have created traffic allow and deny rules based on our example setup topology.
-    Next step is to push these rules to validation-app-engine system.
-    For basic use case where all the source and destinations are 1-1 mapped (No namespace is considered.), we will be using BasicTrafficController from axon client
+In step 1 we have created traffic allow and deny rules based on our example setup topology.
+Next step is to push these rules to validation-app-engine system.
+For basic use case where all the source and destinations are 1-1 mapped (No namespace is considered.), we will be using BasicTrafficController from axon client
 
-    To push all the rules to validation-app-engine system. here is the code snippet::
+To push all the rules to validation-app-engine system. here is the code snippet::
 
         from axon.client.basic_traffic_controller import BasicTrafficController
         gw_host = None # Put IP of jump host if you have workloads behind a jump host
@@ -141,8 +131,8 @@ Register traffic rules
 Start Traffic
 ~~~~~~~~~~~~~
 
-    So far we have covered two mandatory steps of creation rules and pushing that to validation-app-engine system.
-    Now lets start traffic servers and clients::
+So far we have covered two mandatory steps of creation rules and pushing that to validation-app-engine system.
+Now lets start traffic servers and clients::
 
         from axon.client.basic_traffic_controller import BasicTrafficController
         gw_host = None # Put IP of jump host if you have workloads behind a jump host
@@ -156,8 +146,8 @@ Now we have started all the available servers and clients based on pushed traffi
 Traffic Validation
 ~~~~~~~~~~~~~~~~~~
 
-    If central DB (RIAK) is integrated with your setup (RIAK_IP is set in axon.conf for linux and set in user data in windows), we can have per host traffic stats as well.
-    Here is how we can get the stats::
+If central DB (RIAK) is integrated with your setup (RIAK_IP is set in axon.conf for linux and set in user data in windows), we can have per host traffic stats as well.
+Here is how we can get the stats::
 
         from axon.client.axon_client import AxonClient
         proxy_host = None # Put IP of jump host if you have workloads behind a jump host
@@ -171,5 +161,5 @@ Traffic Validation
         client.stats.get_success_count(start_time=start_time, end_time=end_time, destination=None, port=None)
         client.stats.get_failure_count(start_time=start_time, end_time=end_time, destination=None, port=None)
 
-    In ideal case there should not be any failures in system.
-    In this way you can validate you traffic stats.
+In ideal case there should not be any failures in system.
+In this way you can validate you traffic stats.

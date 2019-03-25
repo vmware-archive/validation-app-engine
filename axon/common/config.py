@@ -4,6 +4,7 @@
 # The full license information can be found in LICENSE.txt
 # in the root directory of this project.
 
+import ast
 import logging
 import os
 import platform
@@ -16,7 +17,7 @@ LOG_DIR = "/var/log/axon" if LINUX_OS else "C:\\axon\\log"
 LOG_FILE = "axon.log"
 CLOUD_LINUX_INTERFACE = 'nsx-eth0'
 CLOUD_WINDOWS_INTERFACE = 'Ethernet0'
-NAMESPACE_INTERFACE_NAME_PREFIXES = ["veth"]
+NAMESPACE_INTERFACE_NAME_PREFIXES = ["veth", "eth"]
 
 
 def create_log_dir():
@@ -51,7 +52,7 @@ setup_logging(LOG_DIR)
 
 
 # setup namespace and interface
-NAMESPACE_MODE = False
+NAMESPACE_MODE = ast.literal_eval(os.environ.get("NAMESPACE_MODE", 'False'))
 PRIMARY_IFACE_NAME = CLOUD_LINUX_INTERFACE if LINUX_OS else \
     CLOUD_WINDOWS_INTERFACE
 
