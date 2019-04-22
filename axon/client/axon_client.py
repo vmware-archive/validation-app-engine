@@ -16,14 +16,17 @@ class Manager(object):
 
 class TrafficManger(Manager):
 
+    def delete_traffic_rules(self, endpoint=None):
+        self._client.traffic.delete_traffic_rules(endpoint)
+
     def add_server(self, protocol, port, endpoint, namespace=None):
         self._client.traffic.add_server(protocol, port, endpoint, namespace)
 
     def start_clients(self):
         self._client.traffic.start_clients()
 
-    def get_traffic_config(self, endpoint=None):
-        return self._client.traffic.get_traffic_config(endpoint)
+    def get_traffic_rules(self, endpoint=None):
+        return self._client.traffic.get_traffic_rules(endpoint)
 
     def register_traffic(self, traffic_rules):
         return self._client.traffic.register_traffic(traffic_rules)

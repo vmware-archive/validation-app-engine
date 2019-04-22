@@ -135,9 +135,9 @@ class TestTrafficApp(test_base.BaseTestCase):
                                              ['2.3.4.5'])
 
     @mock.patch.object(ConnectedStateProcessor, 'get_connected_state')
-    def test_get_traffic_config(self, mock_db_conn):
+    def test_get_traffic_rules(self, mock_db_conn):
         mock_db_conn.return_value = {'1.2.3.4': ['fake_list']}
-        traffic_config = self._traffic_app.get_traffic_config('1.2.3.4')
+        traffic_config = self._traffic_app.get_traffic_rules('1.2.3.4')
         mock_db_conn.assert_called_once_with('1.2.3.4')
         self.assertEqual(traffic_config, {'1.2.3.4': ['fake_list']})
 

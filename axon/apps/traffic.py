@@ -38,6 +38,14 @@ class TrafficApp(object):
         self.log.info("Add %s Server on port %s started" % (protocol, port))
         self._server_agent.add_server(port, protocol, endpoint, namespace)
 
+    def delete_traffic_rules(self, endpoint=None):
+        # If endpoint is None , traffic rules for all endpoints will be
+        # deleted
+        endpoint_name = endpoint if endpoint else 'all'
+        self.log.info(
+            "Deleting traffic config for %s" % endpoint_name)
+        self._cs_db.delete_connected_state(endpoint)
+
     def register_traffic(self, traffic_configs):
         self.log.info("Register traffic called with config %s" %
                       traffic_configs)
@@ -57,7 +65,7 @@ class TrafficApp(object):
                 config.get('servers', []),
                 config.get('clients', []))
 
-    def get_traffic_config(self, endpoint=None):
+    def get_traffic_rules(self, endpoint=None):
         return self._cs_db.get_connected_state(endpoint)
 
     def list_servers(self):
