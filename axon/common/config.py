@@ -9,7 +9,6 @@ import logging
 import os
 import platform
 
-from axon.traffic.recorder import RiakRecorder
 
 AXON_PORT = 5678
 LINUX_OS = "Linux" in platform.uname()
@@ -59,8 +58,5 @@ PRIMARY_IFACE_NAME = CLOUD_LINUX_INTERFACE if LINUX_OS else \
 # setup database recorder
 TEST_ID = os.environ.get("TEST_ID")
 HELPER_IP = os.environ.get("HELPER_IP")
-RIAK_PORT = os.environ.get("RIAK_PORT")
 
 TRAFFIC_RECORDER = None
-if HELPER_IP and TEST_ID and RIAK_PORT:
-    TRAFFIC_RECORDER = RiakRecorder(HELPER_IP, RIAK_PORT, TEST_ID)

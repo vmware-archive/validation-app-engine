@@ -8,8 +8,6 @@ import logging
 
 from axon.db.local import session_scope
 from axon.db.local.repository import Repositories
-import axon.db.models.traffic_models as traffic_models
-from axon.db.backends.riak.riak_dbapi import RiakDatabaseAPI
 
 
 class TrafficRecorder(object):
@@ -58,27 +56,3 @@ class SqliteDbRecorder(TrafficRecorder):
     def record_traffic(self, record):
         with session_scope() as _session:
             self._repositery.create_record(_session, **record.as_dict())
-
-
-# TODO add insert Batch insert to reduce database RTT
-class RiakRecorder(TrafficRecorder):
-    def __init__(self, host, port, test_id):
-        self._test_id = test_id
-        self._riak_api = RiakDatabaseAPI(host=host, port=port)
-
-    def record_traffic(self, record):
-        traffic_record = {
-            "src": record.src,
-            "dst": record.dst,
-            "latency": record.latency,
-            "success": record.success,
-            "created": record.created,
-            "testid": self._test_id,
-            "connected": record.connected
-        }
-        if record.traffic_type == "TCP":
-            rec = traffic_models.TCPRecord(**traffic_record)
-        elif record.traffic_type == "UDP":
-            rec = traffic_models.UDPRecord(**traffic_record)
-        # Fire and forget
-        self._riak_api.write(rec)
