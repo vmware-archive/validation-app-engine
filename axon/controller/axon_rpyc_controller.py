@@ -9,11 +9,12 @@ import logging
 import rpyc
 from rpyc.utils.server import ThreadPoolServer
 
+from axon.common import config as conf
 from axon.apps.traffic import TrafficApp
 from axon.apps.stats import StatsApp
 from axon.apps.namespace import NamespaceApp
 from axon.apps.interface import InterfaceApp
-from axon.common import config as conf
+from axon.common import consts
 from axon.db.sql.config import init_session as cinit_session
 from axon.db.sql.analytics import init_session as ainit_session
 
@@ -77,7 +78,7 @@ class AxonService(AxonServiceBase):
 class AxonController(object):
 
     def __init__(self):
-        self.axon_port = conf.AXON_PORT
+        self.axon_port = consts.AXON_PORT
         self.service = AxonService()
         self.protocol_config = self.service.RPYC_PROTOCOL_CONFIG
         self.logger = logging.getLogger(__name__)

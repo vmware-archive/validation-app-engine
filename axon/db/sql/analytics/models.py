@@ -58,11 +58,13 @@ class RequestCount(Base):
     created = Column(Float())
     success = Column(Integer())
     failure = Column(Integer())
+    type = Column(String(10))
 
     FIELDS = {
         'created': float,
         'success': int,
-        'failure': int
+        'failure': int,
+        'type': str
     }
 
     FIELDS.update(Base.FIELDS)

@@ -1,10 +1,10 @@
 import logging
 from multiprocessing.pool import ThreadPool
 
-from axon.db.recorder import SqlDbRecorder
+from axon.db.recorder_factory import RecorderFactory
+from axon.common import config as conf
 
 
-POOL_SIZE = 20
 log = logging.getLogger(__name__)
 
 
@@ -25,11 +25,13 @@ class DBPoolManager(object):
     write record to the db recorder provided
     """
 
-    def __init__(self, record_queue, db_recorder=None):
-        self._db_recorder = db_recorder if db_recorder else SqlDbRecorder()
+    def __init__(self, record_queue):
+        self._db_recorder = RecorderFactory.get_recorder()
         self._record_queue = record_queue
 
     def run(self):
-        thread_pool = ThreadPool(POOL_SIZE)
+        thread_pool = ThreadPool(conf.RECORD_UPDATER_THREAD_POOL_SIZE)
         thread_pool.map(process_record_queues,
-                        [(self._record_queue, self._db_recorder)] * POOL_SIZE)
+                        [(self._record_queue,
+                          self._db_recorder)] *
+                        conf.RECORD_UPDATER_THREAD_POOL_SIZE)

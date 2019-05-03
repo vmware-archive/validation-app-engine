@@ -25,14 +25,20 @@ class BasicL2ConnectivityTest(object):
     def _create_allow_rules_on_hosts(self, source, destinations):
         rule_list = []
         for destination in destinations:
-            rule_list.append((TrafficRule(Endpoint(source),
-                              Endpoint(destination),
-                              Port(12345), Protocol.TCP,
-                              Connected.CONNECTED, Action.ALLOW)))
-            rule_list.append((TrafficRule(Endpoint(source),
-                              Endpoint(destination),
-                              Port(12345), Protocol.UDP,
-                              Connected.CONNECTED, Action.ALLOW)))
+            rule_list.append(TrafficRule(Endpoint(source),
+                             Endpoint(destination),
+                             Port(12345), Protocol.TCP,
+                             Connected.CONNECTED, Action.ALLOW))
+            rule_list.append(TrafficRule(Endpoint(source),
+                             Endpoint(destination),
+                             Port(12345), Protocol.UDP,
+                             Connected.CONNECTED, Action.ALLOW))
+            rule_list.append(TrafficRule(Endpoint(source),
+                             Endpoint(destination), Port(5432), Protocol.TCP,
+                             Connected.CONNECTED, Action.ALLOW))
+            rule_list.append(TrafficRule(Endpoint(source),
+                             Endpoint(destination), Port(5432), Protocol.UDP,
+                             Connected.CONNECTED, Action.ALLOW))
         return rule_list
 
     def create_rules_with_given_hosts(self):

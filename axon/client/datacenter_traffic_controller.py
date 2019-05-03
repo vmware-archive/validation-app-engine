@@ -56,8 +56,8 @@ def stop_clients(stop_param):
 
 
 def clear_traffic_rules(delete_param):
-    server = stop_param[0]
-    proxy_host = stop_param[1]
+    server = delete_param[0]
+    proxy_host = delete_param[1]
     with AxonClient(server, proxy_host=proxy_host) as client:
         client.traffic.delete_traffic_rules()
 

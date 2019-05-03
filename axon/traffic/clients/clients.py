@@ -15,7 +15,7 @@ import time
 
 import requests
 
-from axon.common.consts import PACKET_SIZE
+from axon.common.config import PACKET_SIZE
 from axon.traffic.resources import TCPRecord, UDPRecord, HTTPRecord
 
 
@@ -288,4 +288,4 @@ class TrafficClient(object):
     def run(self):
         while True:
             self._send_traffic()
-            time.sleep(20)
+            time.sleep(5)

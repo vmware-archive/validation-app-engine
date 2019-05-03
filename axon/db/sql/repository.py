@@ -74,9 +74,9 @@ class Repositories(object):
                                       samples=samples, created=created)
         session.add(record)
 
-    def create_record_count(self, session, success, failure, created):
+    def create_record_count(self, session, proto, success, failure, created):
         id = str(uuid.uuid4())
-        record = amodels.RequestCount(id=id, success=success,
+        record = amodels.RequestCount(id=id, type=proto, success=success,
                                       failure=failure, created=created)
         session.add(record)
 
@@ -87,6 +87,8 @@ class Repositories(object):
             del traffic_dict['error']
             record = amodels.TrafficRecord(**traffic_dict)
         else:
+            del traffic_dict['latency']
+            del traffic_dict['success']
             record = amodels.Fault(**traffic_dict)
         session.add(record)
 
