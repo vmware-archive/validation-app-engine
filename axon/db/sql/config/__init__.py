@@ -38,6 +38,8 @@ def init_session():
 def session_scope():
     """Provide a transactional scope around a series of operations."""
     session = cs_db_session
+    # reconfiguring bind engine in db session to avoid windows threading issue
+    session.configure(bind=cs_engine)
     try:
         yield session
         session.commit()
