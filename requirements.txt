@@ -3,7 +3,7 @@ fabric==2.4.0
 ipaddr==2.2.0
 nsenter==0.2
 psutil==5.4.7
-requests==2.20.0
+requests==2.21.0
 rpyc==4.0.2
 six>=1.10.0
 SQLAlchemy!=1.1.5,!=1.1.6,!=1.1.7,!=1.1.8,>=1.0.10
