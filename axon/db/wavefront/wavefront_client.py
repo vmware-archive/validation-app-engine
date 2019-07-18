@@ -110,7 +110,9 @@ class WavefrontClient(object):
         if not proxy:
             self._client = WavefrontDirectClient(server, token)
         else:
-            self._client = WavefrontProxyClient(server)
+            self._client = WavefrontProxyClient(
+                host=server, metrics_port=2878,
+                distribution_port=2878, tracing_port=30000)
 
     def create_record_count(self, proto_record_dict, created):
         record_count = RecordCount(self._client, proto_record_dict, created)
