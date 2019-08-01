@@ -105,7 +105,7 @@ def withlock(getlock):
                 flag_lock_wait_msg = True
             else:
                 flag_lock_wait_msg = info_list[2]
-            what = "%s() with %s" % (func.func_name, lock)
+            what = "%s() with %s" % (func.__name__, lock)
             if flag_log_msg:
                 log.debug("Trying to lock: %s" % what)
             if not lock.acquire(False):
@@ -125,7 +125,7 @@ def withlock(getlock):
                     log.debug("Unlocking: %s" % what)
                 lock.release()
             return ret
-        locked_func.func_name = "locked_%s" % func.func_name
+        locked_func.__name__ = "locked_%s" % func.__name__
         return locked_func
     return func_locker
 
@@ -299,7 +299,7 @@ class WorkManager():
                 except Exception as e:
                     thread = threading.current_thread().name
                     result = FuncException(
-                        func.func_name, args, kwargs, repr(e),
+                        func.__name__, args, kwargs, repr(e),
                         sys.exc_info(), thread=thread)
                     self.log.exception("%s: %s" % (result, e))
                     self._exceptions.append(result)
@@ -309,7 +309,7 @@ class WorkManager():
                 thread = threading.current_thread().name
                 msg = ("Aborted all pending queued func using "
                        "stop(abort=True) or work_done(abort=True)")
-                result = AbortException(func.func_name, args, kwargs,
+                result = AbortException(func.__name__, args, kwargs,
                                         msg, thread=thread)
                 self._exceptions.append(result)
                 q.put(result)
