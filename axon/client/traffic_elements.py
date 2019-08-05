@@ -12,7 +12,7 @@ like type of traffic protocols to support, range of ports allowed, type of src
 /dest IP representations to expect. It also helps in avoiding the cyclic
 dependency.
 '''
-import ipaddr
+import ipaddress
 import json
 import six
 
@@ -69,7 +69,7 @@ class Endpoint(object):
         into the list of IP addresses if a valid input.
         """
         try:
-            return list(ipaddr.IPNetwork(six.text_type(ep_address)))
+            return list(ipaddress.ip_network(six.text_type(ep_address)))
         except Exception as err:
             raise InvalidRangeError(err)
 

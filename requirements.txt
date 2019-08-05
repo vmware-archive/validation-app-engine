@@ -1,7 +1,7 @@
 # Copyright (C) 2018 VMware, Inc. All rights reserved.
 fabric==2.4.0
-ipaddr==2.2.0
 nsenter==0.2
+ipaddress; python_version=='2.7'
 psutil==5.4.7
 requests==2.21.0
 rpyc==4.0.2
