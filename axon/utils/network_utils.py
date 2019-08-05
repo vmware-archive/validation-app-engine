@@ -7,7 +7,7 @@
 import multiprocessing
 import platform
 if "Linux" in platform.uname():  # noqa
-    from nsenter import Namespace as NsenterNamespace
+    from axon.utils import nsenter
 import psutil
 import subprocess
 import axon.common.config as axon_config
@@ -49,7 +49,7 @@ class Namespace(object):
         ns_path = '/var/run/netns/%s' % self.name
         manager = multiprocessing.Manager()
         return_dict = manager.dict()
-        with NsenterNamespace(ns_path, 'net'):
+        with nsenter.namespace(ns_path, 'net'):
             process = multiprocessing.Process(
                 target=get_interfaces_in_namespace, args=(return_dict,))
             process.start()

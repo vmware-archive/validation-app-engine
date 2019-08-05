@@ -11,7 +11,7 @@ import six
 import platform
 import threading
 if "Linux" in platform.uname():  # noqa
-    from nsenter import Namespace
+    from axon.utils import nsenter
 
 from axon.traffic.servers import create_server_class
 from axon.traffic.workers import WorkerProcess
@@ -273,7 +273,7 @@ class NamespaceServerManager(RootNsServerManager):
         try:
             server_cls, args, kwargs = create_server_class(protocol, port, src)
             process = WorkerProcess(server_cls, args, kwargs)
-            with Namespace(self._ns_full_path, 'net'):
+            with nsenter.namespace(self._ns_full_path, 'net'):
                 process.start()
             self._server_registry.add_server(
                 self._ns, port, protocol, process)
@@ -291,7 +291,7 @@ class NamespaceServerManager(RootNsServerManager):
                 "Stop %s server on port %s in namespace %s" %
                 (protocol, port, self._ns))
             if server_process and server_process.is_running():
-                with Namespace(self._ns_full_path, 'net'):
+                with nsenter.namespace(self._ns_full_path, 'net'):
                     server_process.stop()
                     self._server_registry.remove_server(
                         self._ns, port, protocol)
@@ -417,7 +417,7 @@ class NamespaceClientManager(RootNsClientManager):
         try:
             process = WorkerProcess(
                 TrafficClient, (src, clients, self._record_queue), {})
-            with Namespace(self._ns_full_path, 'net'):
+            with nsenter.namespace(self._ns_full_path, 'net'):
                 process.start()
                 self._client_registry.add_client(self._ns, process)
         except Exception as e:
@@ -429,7 +429,7 @@ class NamespaceClientManager(RootNsClientManager):
         try:
             client = self._client_registry.get_client(self._ns)
             if client and client.is_running():
-                with Namespace(self._ns_full_path, 'net'):
+                with nsenter.namespace(self._ns_full_path, 'net'):
                     client.stop()
                     self._client_registry.remove_client(self._ns)
             elif client and not client.is_running():
