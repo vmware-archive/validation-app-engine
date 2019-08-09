@@ -13,7 +13,10 @@ import socket
 from threading import Thread
 import time
 
-import requests
+try:
+    from urllib2 import urlopen
+except ImportError:
+    from urllib.request import urlopen
 
 from axon.common.config import PACKET_SIZE
 from axon.traffic.resources import TCPRecord, UDPRecord, HTTPRecord
@@ -211,14 +214,12 @@ class UDPClient(TCPClient):
 class HTTPClient(TCPClient):
 
     def _send_receive(self):
+        url = 'http://%s:%s' % (self._destination, self._port)
         try:
-            response = requests.get('http://%s:%s' %
-                                    (self._destination, self._port))
-            success = response.status_code == requests.codes.ok
-            if not success:
+            status = urlopen(url).code
+            if status != 200:
                 raise Exception(
-                    "HTTP Request failed with status %s" %
-                    response.status_code)
+                    "HTTP Request failed with status %s" % status)
         except Exception:
             raise
 

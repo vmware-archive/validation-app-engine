@@ -3,9 +3,7 @@ fabric==2.4.0
 nsenter==0.2
 ipaddress; python_version=='2.7'
 psutil==5.4.7
-requests==2.21.0
 rpyc==4.0.2
 six>=1.10.0
 SQLAlchemy!=1.1.5,!=1.1.6,!=1.1.7,!=1.1.8,>=1.0.10
-certifi==2019.3.9
 wavefront-sdk-python==1.1.1

@@ -6,11 +6,8 @@
 
 import os
 import platform
-import requests
 
 from axon.common import utils
-
-requests.packages.urllib3.disable_warnings()
 
 LINUX_OS = "Linux" in platform.uname()
 utils.setup_logging()
