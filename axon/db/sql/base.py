@@ -4,9 +4,11 @@
 # The full license information can be found in LICENSE.txt
 # in the root directory of this project.
 
-import pickle
+import logging
+import six.moves.cPickle as pickle
+import time
 
-from sqlalchemy.types import TypeDecorator, TEXT
+from sqlalchemy.types import TypeDecorator, Binary
 from sqlalchemy.ext.declarative import declared_attr
 
 
@@ -17,7 +19,7 @@ def passby(data):
 class PickelEncodedType(TypeDecorator):
     """Abstract base type serialized as json-encoded string in db."""
     type = None
-    impl = TEXT
+    impl = Binary
 
     def process_bind_param(self, value, dialect):
         if value is None:
@@ -29,7 +31,7 @@ class PickelEncodedType(TypeDecorator):
                             % (self.__class__.__name__,
                                self.type.__name__,
                                type(value).__name__))
-        serialized_value = pickle.dumps(value)
+        serialized_value = pickle.dumps(value, pickle.HIGHEST_PROTOCOL)
         return serialized_value
 
     def process_result_value(self, value, dialect):

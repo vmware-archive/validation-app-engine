@@ -3,6 +3,9 @@
 # SPDX-License-Identifier: BSD-2 License
 # The full license information can be found in LICENSE.txt
 # in the root directory of this project.
+import errno
+import socket
+import time
 
 import rpyc
 
@@ -111,7 +114,9 @@ class AxonClient(object):
     Top level object to access Axon API
     """
 
-    def __init__(self, axon_host, axon_port=5678, proxy_host=None):
+    def __init__(self, axon_host, axon_port=5678, 
+                 proxy_host=None, request_timeout=180,
+                 retry_count=5, sleep_interval=.5):
         """ Initialization of Client object
 
         :param axon_host: the host IP where axon service is running
@@ -120,18 +125,55 @@ class AxonClient(object):
         :type axon_port: int
         :param proxy_host: ip of the proxy host
         :type proxy_host: str
+        :param request_timeout: rpyc request timeout
+        :type request_timeout: int
+        :param retry_count: no of retries in case of connection failure
+        :type retry_count: int
+        :type sleep_interval: number of seconds to sleep between retries
         """
         self._host = axon_host
         self._port = axon_port
-        if proxy_host:
-            conn = rpyc.classic.connect(proxy_host)
-            self.rpc_client = conn.modules.rpyc.connect(self._host, self._port)
-        else:
-            self.rpc_client = rpyc.connect(self._host, self._port)
+        self._proxy_host = proxy_host
+        self.rpc_client = None
+        self._connect(retry_count, sleep_interval, request_timeout)
         self.traffic = TrafficManger(self.rpc_client.root)
         self.stats = StatsManager(self.rpc_client.root)
         self.namespace = NamespaceManager(self.rpc_client.root)
         self.interface = InterfaceManager(self.rpc_client.root)
+
+    def _connect(self, retry_count, sleep_interval, request_timeout):
+
+        # Client will wait for request_timeout seconds in case
+        # server takes long time to response, default timeout
+        # is 30 seconds which is small for few Axon APIs
+        conf={"sync_request_timeout": request_timeout}
+        failure_count = 0
+        last_exception = None
+        while failure_count < retry_count:
+            failure_count += 1
+            try:
+                if self._proxy_host:
+                    conn = rpyc.classic.connect(self._proxy_host)
+                    self.rpc_client = conn.modules.rpyc.connect(
+                        self._host, self._port, config=conf)
+                else:
+                    self.rpc_client = rpyc.connect(
+                        self._host, self._port, config=conf)
+                break
+            except socket.timeout as e:
+                last_exception = e
+                time.sleep(sleep_interval)
+            except socket.error as e:
+                last_exception = e
+                if e.errno == errno.ECONNRESET or e.errno == errno.ECONNREFUSED:
+                    time.sleep(sleep_interval)
+                else:
+                    raise
+            except Exception:
+                raise
+
+        if  self.rpc_client is None:
+            raise last_exception
 
     def __enter__(self):
         return self
