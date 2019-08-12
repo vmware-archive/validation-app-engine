@@ -83,7 +83,7 @@ class TCPClient(Client):
         :rtype: socket object
         """
         sock = socket.socket(address_family, socket_type)
-        sock.settimeout(2)
+        sock.settimeout(5)
         return sock
 
     def __connect(self, sock):
@@ -107,8 +107,14 @@ class TCPClient(Client):
         try:
             sock.send(payload)
             sock.recv(PACKET_SIZE)
-        except Exception:
-            raise
+        except Exception as e:
+            try:
+                self.log.error("Exception %s, trying again", str(e))
+                time.sleep(1)
+                sock.send(payload)
+                sock.recv(PACKET_SIZE)
+            except Exception:
+                raise
         finally:
             sock.close()
 
@@ -187,8 +193,14 @@ class UDPClient(TCPClient):
         try:
             sock.sendto(payload, (self._destination, self._port))
             sock.recvfrom(PACKET_SIZE)
-        except Exception:
-            raise
+        except Exception as e:
+            try:
+                self.log.error("Exception %s, trying again", str(e))
+                time.sleep(1)
+                sock.sendto(payload, (self._destination, self._port))
+                sock.recvfrom(PACKET_SIZE)
+            except Exception:
+                raise
         finally:
             sock.close()
 
@@ -215,13 +227,24 @@ class HTTPClient(TCPClient):
 
     def _send_receive(self):
         url = 'http://%s:%s' % (self._destination, self._port)
+        status = None
         try:
             status = urlopen(url).code
             if status != 200:
                 raise Exception(
                     "HTTP Request failed with status %s" % status)
-        except Exception:
-            raise
+        except Exception as e:
+            if status:
+                raise
+            try:
+                self.log.error("Exception %s, trying again", str(e))
+                time.sleep(1)
+                status = urlopen(url).code
+                if status != 200:
+                    raise Exception(
+                        "HTTP Request failed with status %s" % status)
+            except Exception:
+                raise
 
     def record(self, success=True, error=None):
         """

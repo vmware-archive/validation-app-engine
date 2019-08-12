@@ -27,6 +27,7 @@ class TrafficRecord(object):
         tags['dst'] = self._traffic_record.dst
         tags['port'] = str(self._traffic_record.port)
         tags['protocol'] = self._traffic_record.traffic_type
+        tags['error'] = str(self._traffic_record.error)
         tags['connected'] = \
             'true' if self._traffic_record.connected else 'false'
         tags['created'] = datetime.datetime.fromtimestamp(
@@ -34,7 +35,7 @@ class TrafficRecord(object):
         self._client.send_metric(
             name=metric, value=val,
             timestamp=self._traffic_record.created,
-            source="localhost", tags=tags)
+            source=tags['src'], tags=tags)
 
 
 class RecordCount(object):

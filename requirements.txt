@@ -6,3 +6,4 @@ rpyc==4.0.2
 six>=1.10.0
 SQLAlchemy!=1.1.5,!=1.1.6,!=1.1.7,!=1.1.8,>=1.0.10
 wavefront-sdk-python==1.1.1
+wavefront-api-client==2.33.15
