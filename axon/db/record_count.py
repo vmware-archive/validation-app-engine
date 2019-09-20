@@ -59,7 +59,7 @@ class SqlRecordCountHandler(RecordCountHandler):
 
     def _create_record_count(self):
         created = time.time()
-        for proto in self._proto_record_count.keys():
+        for proto in list(self._proto_record_count.keys()):
             success_count = self._proto_record_count[proto]['success']
             failure_count = self._proto_record_count[proto]['failure']
             if success_count > 0 or failure_count > 0:

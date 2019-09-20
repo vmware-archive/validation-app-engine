@@ -76,7 +76,7 @@ class ServerRegistry(object):
         Get all server objects
         """
         with self.lock:
-            return self.__registry.items()
+            return list(self.__registry.items())
 
 
 class ClientRegistry(object):
@@ -127,7 +127,7 @@ class ClientRegistry(object):
         Get all client objects
         """
         with self.lock:
-            return self.__registry.items()
+            return list(self.__registry.items())
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -216,7 +216,7 @@ class RootNsServerManager(ServerManager):
     def stop_all_servers(self):
         servers = [(conf, server) for ns, conf_server_map in
                    self._server_registry.get_all_servers() for
-                   conf, server in conf_server_map.items()]
+                   conf, server in list(conf_server_map.items())]
         for conf, server in servers:
             self.log.info(
                 "Stopping %s server on port %s" % (conf[1], conf[0]))
@@ -238,13 +238,13 @@ class RootNsServerManager(ServerManager):
     def list_servers(self):
         servers = [(ns, conf) for ns, conf_server_map in
                    self._server_registry.get_all_servers() for
-                   conf, server in conf_server_map.items()]
+                   conf, server in list(conf_server_map.items())]
         return servers
 
     def get_server(self, protocol, port, namespace=None):
         servers = [(ns, conf) for ns, conf_server_map in
                    self._server_registry.get_all_servers() for
-                   conf, server in conf_server_map.items() if
+                   conf, server in list(conf_server_map.items()) if
                    conf[0] == port and conf[1] == protocol]
         return servers
 

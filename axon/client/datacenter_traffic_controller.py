@@ -144,14 +144,14 @@ class DataCenterTrafficController(TrafficController):
 
     def register_traffic(self, traffic_config):
         self.__create_rules(traffic_config)
-        for vif, rule in self._servers.items():
+        for vif, rule in list(self._servers.items()):
             workload = self.get_associated_workload(vif)
             workload = workload if workload else vif
             self._workload_servers[str(workload)].append(rule.as_dict())
         pool = ThreadPool(THREADPOOL_SIZE)
         params = [(workload_server, rule_list, self._gw_host) for
                   workload_server, rule_list in
-                  self._workload_servers.items()]
+                  list(self._workload_servers.items())]
         pool.map(register_traffic, params)
         pool.close()
         pool.join()
@@ -160,7 +160,7 @@ class DataCenterTrafficController(TrafficController):
         pass
 
     def __stop_clients(self, servers):
-        servers = servers if servers else self._workload_servers.keys()
+        servers = servers if servers else list(self._workload_servers.keys())
         if not servers:
             return
         pool = ThreadPool(THREADPOOL_SIZE)
@@ -170,7 +170,7 @@ class DataCenterTrafficController(TrafficController):
         pool.join()
 
     def __stop_servers(self, servers):
-        servers = servers if servers else self._workload_servers.keys()
+        servers = servers if servers else list(self._workload_servers.keys())
         if not servers:
             return
         pool = ThreadPool(THREADPOOL_SIZE)
@@ -180,7 +180,7 @@ class DataCenterTrafficController(TrafficController):
         pool.join()
 
     def __start_servers(self, servers):
-        servers = servers if servers else self._workload_servers.keys()
+        servers = servers if servers else list(self._workload_servers.keys())
         if not servers:
             return
         pool = ThreadPool(THREADPOOL_SIZE)
@@ -190,7 +190,7 @@ class DataCenterTrafficController(TrafficController):
         pool.join()
 
     def __start_clients(self, servers):
-        servers = servers if servers else self._workload_servers.keys()
+        servers = servers if servers else list(self._workload_servers.keys())
         if not servers:
             return
         pool = ThreadPool(THREADPOOL_SIZE)
@@ -200,7 +200,7 @@ class DataCenterTrafficController(TrafficController):
         pool.join()
 
     def clear_all_traffic_rules(self, servers=None):
-        servers = servers if servers else self._workload_servers.keys()
+        servers = servers if servers else list(self._workload_servers.keys())
         if not servers:
             return
         pool = ThreadPool(THREADPOOL_SIZE)

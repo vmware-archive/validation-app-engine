@@ -17,6 +17,7 @@ from axon.apps.interface import InterfaceApp
 from axon.common import consts
 from axon.db.sql.config import init_session as cinit_session
 from axon.db.sql.analytics import init_session as ainit_session
+import collections
 
 rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 
@@ -24,7 +25,7 @@ rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 def exposify(cls):
     for key in dir(cls):
         val = getattr(cls, key)
-        if callable(val) and not key.startswith("_"):
+        if isinstance(val, collections.Callable) and not key.startswith("_"):
             setattr(cls, "exposed_%s" % (key,), val)
     return cls
 

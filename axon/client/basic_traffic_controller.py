@@ -89,8 +89,8 @@ class TrafficRecord(object):
                 protocol, port, destination, connected, action))
 
     def as_dict(self):
-        return dict(zip(['endpoint', 'servers', 'clients'],
-                        [self._endpoint, self._servers, self._clients]))
+        return dict(list(zip(['endpoint', 'servers', 'clients'],
+                        [self._endpoint, self._servers, self._clients])))
 
 
 class BasicTrafficController(TrafficController):
@@ -125,7 +125,7 @@ class BasicTrafficController(TrafficController):
         self.__create_rules(traffic_config)
         work = []
         for server, rule, gw_host in [(server, rule, self._gw_host) for
-                                      server, rule in self._servers.items()]:
+                                      server, rule in list(self._servers.items())]:
             work.append([register_traffic, [server, rule, gw_host], {}])
         if not self.__execute_work(work):
             self.log.error("Traffic Push does not succeed on all endpoints")
@@ -135,14 +135,14 @@ class BasicTrafficController(TrafficController):
         self.__create_rules(traffic_config)
         work = []
         for server, rule, gw_host in [(server, rule, self._gw_host) for
-                                      server, rule in self._servers.items()]:
+                                      server, rule in list(self._servers.items())]:
             work.append([unregister_traffic, [server, rule, gw_host], {}])
         if not self.__execute_work(work):
             self.log.error("Traffic Push does not succeed on all endpoints")
         self.log.info("Traffic push completed")
 
     def __stop_clients(self, servers):
-        servers = servers if servers else self._servers.keys()
+        servers = servers if servers else list(self._servers.keys())
         if not servers:
             return
         work = []
@@ -153,7 +153,7 @@ class BasicTrafficController(TrafficController):
         self.log.info("Stop Clients completed")
 
     def __stop_servers(self, servers):
-        servers = servers if servers else self._servers.keys()
+        servers = servers if servers else list(self._servers.keys())
         if not servers:
             return
         work = []
@@ -164,7 +164,7 @@ class BasicTrafficController(TrafficController):
         self.log.info("Stop servers completed")
 
     def __start_servers(self, servers):
-        servers = servers if servers else self._servers.keys()
+        servers = servers if servers else list(self._servers.keys())
         if not servers:
             return
         work = []
@@ -175,7 +175,7 @@ class BasicTrafficController(TrafficController):
         self.log.info("Start servers completed")
 
     def __start_clients(self, servers):
-        servers = servers if servers else self._servers.keys()
+        servers = servers if servers else list(self._servers.keys())
         if not servers:
             return
         work = []

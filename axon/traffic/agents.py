@@ -61,7 +61,7 @@ class AxonRootNamespaceServerAgent(object):
         Stop all Servers
         :return: None
         """
-        for mngr in self.mngrs_map.values():
+        for mngr in list(self.mngrs_map.values()):
             mngr.stop_all_servers()
 
     def add_server(self, port, protocol, endpoint, namespace='root'):
@@ -86,18 +86,18 @@ class AxonRootNamespaceServerAgent(object):
 
     def list_servers(self):
         server_list = []
-        for mngr in self.mngrs_map.values():
+        for mngr in list(self.mngrs_map.values()):
             server_list.extend(mngr.list_servers())
         return server_list
 
     def get_server(self, protocol, port):
         server_list = []
-        for mngr in self.mngrs_map.values():
+        for mngr in list(self.mngrs_map.values()):
             server_list.extend(mngr.get_server(protocol, port))
         return server_list
 
     def stop_server(self, protocol, port, namespace='root'):
-        for mngr in self.mngrs_map.values():
+        for mngr in list(self.mngrs_map.values()):
             mngr.stop_server(port, protocol)
 
 
@@ -149,7 +149,7 @@ class AxonNameSpaceServerAgent(AxonRootNamespaceServerAgent):
         :return: None
         """
         ns_list = [namespace] if namespace else self._ns_list
-        for ns, mngr in self.mngrs_map.items():
+        for ns, mngr in list(self.mngrs_map.items()):
             if ns in ns_list:
                 mngr.stop_all_servers()
 
@@ -232,11 +232,11 @@ class AxonRootNamespaceClientAgent(object):
         Stop all Clients
         :return: None
         """
-        for mngr in self.mngrs_map.values():
+        for mngr in list(self.mngrs_map.values()):
             mngr.stop_clients()
 
     def stop_client(self, namespace='localhost'):
-        for mngr in self.mngrs_map.values():
+        for mngr in list(self.mngrs_map.values()):
             mngr.stop_client()
 
 
@@ -278,7 +278,7 @@ class AxonNameSpaceClientAgent(AxonRootNamespaceClientAgent):
 
     def stop_clients(self, namespace=None):
         ns_list = [namespace] if namespace else self._ns_list
-        for ns, mngr in self.mngrs_map.items():
+        for ns, mngr in list(self.mngrs_map.items()):
             if ns in ns_list:
                 mngr.stop_clients()
 

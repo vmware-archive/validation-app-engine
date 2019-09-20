@@ -190,7 +190,7 @@ class ConnectedStateProcessor(object):
             else:
                 client_map.pop((protocol, port, destination), None)
 
-        return client_map.values()
+        return list(client_map.values())
 
     def create_or_update_connected_state(
             self, endpoint, servers=None, clients=None):
