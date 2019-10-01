@@ -95,7 +95,7 @@ class WorkloadVifsMap(object):
     def load_workloads_vifs_map(self):
         log.info("Loading workloads_vifs map")
         with open(os.path.join(
-                WORKLOAD_VIF_MAP_FILE_PATH, WORKLOAD_VIF_MAP_FILE)) as wv_map:
+                WORKLOAD_VIF_MAP_FILE_PATH, WORKLOAD_VIF_MAP_FILE), "rb") as wv_map:
             self.workload_vif_map = pickle.loads(wv_map.read())
             self.vif_map_load = True
 
