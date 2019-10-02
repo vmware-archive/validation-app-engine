@@ -61,26 +61,26 @@ class RecordCount(object):
             success_data = metric_to_line_data(
                 name=SUCCESS_METRIC,
                 value=self._proto_record_dict[proto]['success'],
-                timestamp=self._created_time, source="localhost",
-                tags=tags,
-                default_source="defaultSource")
+                timestamp=self._created_time,
+                source=conf.WAVEFRONT_SOURCE_TAG, tags=tags,
+                default_source=conf.WAVEFRONT_SOURCE_TAG)
             failure_data = metric_to_line_data(
                 name=FAILURE_METRIC,
                 value=self._proto_record_dict[proto]['failure'],
-                timestamp=self._created_time, source="localhost",
-                tags=tags,
-                default_source="defaultSource")
+                timestamp=self._created_time,
+                source=conf.WAVEFRONT_SOURCE_TAG, tags=tags,
+                default_source=conf.WAVEFRONT_SOURCE_TAG)
             batch_metric_data.extend([success_data, failure_data])
         success_metric = metric_to_line_data(
             name=self.METRIC + 'success',
             value=total_success, timestamp=self._created_time,
-            source="localhost", tags=tags,
-            default_source="defaultSource")
+            source=conf.WAVEFRONT_SOURCE_TAG, tags=tags,
+            default_source=conf.WAVEFRONT_SOURCE_TAG)
         failure_metric = metric_to_line_data(
             name=self.METRIC + 'failure',
             value=total_failure, timestamp=self._created_time,
-            source="localhost", tags=tags,
-            default_source="defaultSource")
+            source=conf.WAVEFRONT_SOURCE_TAG, tags=tags,
+            default_source=conf.WAVEFRONT_SOURCE_TAG)
         batch_metric_data.extend([success_metric, failure_metric])
         self._client.send_metric_now(batch_metric_data)
 
@@ -103,7 +103,7 @@ class LatencyStats(object):
         self._client.send_metric(
             name=self.METRIC, value=avg_latency,
             timestamp=self._created_time,
-            source="localhost", tags=tags)
+            source=conf.WAVEFRONT_SOURCE_TAG, tags=tags)
 
 
 class WavefrontClient(object):
