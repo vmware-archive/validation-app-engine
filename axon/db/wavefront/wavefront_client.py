@@ -1,4 +1,5 @@
 import datetime
+import random
 
 from wavefront_sdk import WavefrontDirectClient, WavefrontProxyClient
 from wavefront_sdk.common import metric_to_line_data
@@ -17,25 +18,29 @@ class TrafficRecord(object):
         self._traffic_record = traffic_record
 
     def save(self):
-        tags = {"datacenter": conf.TESTBED_NAME,
-                "test_id": conf.TEST_ID}
-        metric_suffix = '.success' if self._traffic_record.success else\
-            '.failure'
-        metric = self.METRIC + metric_suffix
-        val = 1 if self._traffic_record.success else 0
-        tags['src'] = self._traffic_record.src
-        tags['dst'] = self._traffic_record.dst
-        tags['port'] = str(self._traffic_record.port)
-        tags['protocol'] = self._traffic_record.traffic_type
-        tags['error'] = str(self._traffic_record.error)
-        tags['connected'] = \
-            'true' if self._traffic_record.connected else 'false'
-        tags['created'] = datetime.datetime.fromtimestamp(
-            self._traffic_record.created).strftime('%c')
-        self._client.send_metric(
-            name=metric, value=val,
-            timestamp=self._traffic_record.created,
-            source=tags['src'], tags=tags)
+        if self.report_to_wavefront():
+            tags = {"datacenter": conf.TESTBED_NAME,
+                    "test_id": conf.TEST_ID}
+            metric_suffix = '.success' if self._traffic_record.success else\
+                '.failure'
+            metric = self.METRIC + metric_suffix
+            val = 1 if self._traffic_record.success else 0
+            tags['src'] = self._traffic_record.src
+            tags['dst'] = self._traffic_record.dst
+            tags['port'] = str(self._traffic_record.port)
+            tags['protocol'] = self._traffic_record.traffic_type
+            tags['error'] = str(self._traffic_record.error)
+            tags['connected'] = \
+                'true' if self._traffic_record.connected else 'false'
+            tags['created'] = datetime.datetime.fromtimestamp(
+                self._traffic_record.created).strftime('%c')
+            self._client.send_metric(
+                name=metric, value=val,
+                timestamp=self._traffic_record.created,
+                source=tags['src'], tags=tags)
+
+    def report_to_wavefront(self):
+        return random.random() <= conf.WAVEFRONT_REPORT_PERC
 
 
 class RecordCount(object):

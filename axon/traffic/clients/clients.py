@@ -109,11 +109,14 @@ class TCPClient(Client):
             sock.recv(PACKET_SIZE)
         except Exception as e:
             try:
-                self.log.error("Exception %s, trying again", str(e))
+                self.log.error("Exception %s for TCP %s -> %s:%s, trying again",
+                               str(e), self._source, self._destination, self._port)
                 time.sleep(1)
                 sock.send(payload)
                 sock.recv(PACKET_SIZE)
             except Exception:
+                self.log.error("Exception %s for TCP %s -> %s:%s, second try",
+                               str(e), self._source, self._destination, self._port)
                 raise
         finally:
             sock.close()
@@ -195,11 +198,14 @@ class UDPClient(TCPClient):
             sock.recvfrom(PACKET_SIZE)
         except Exception as e:
             try:
-                self.log.error("Exception %s, trying again", str(e))
+                self.log.error("Exception %s for UDP %s -> %s:%s, trying again",
+                               str(e), self._source, self._destination, self._port)
                 time.sleep(1)
                 sock.sendto(payload, (self._destination, self._port))
                 sock.recvfrom(PACKET_SIZE)
             except Exception:
+                self.log.error("Exception %s for UDP %s -> %s:%s, second try",
+                               str(e), self._source, self._destination, self._port)
                 raise
         finally:
             sock.close()
@@ -237,13 +243,16 @@ class HTTPClient(TCPClient):
             if status:
                 raise
             try:
-                self.log.error("Exception %s, trying again", str(e))
+                self.log.error("Exception %s for HTTP %s -> %s:%s, trying again",
+                               str(e), self._source, self._destination, self._port)
                 time.sleep(1)
                 status = urlopen(url).code
                 if status != 200:
                     raise Exception(
                         "HTTP Request failed with status %s" % status)
             except Exception:
+                self.log.error("Exception %s for HTTP %s -> %s:%s, second try",
+                               str(e), self._source, self._destination, self._port)
                 raise
 
     def record(self, success=True, error=None):

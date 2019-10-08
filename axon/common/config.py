@@ -24,11 +24,14 @@ ALLOW_REUSE_ADDRESS = True
 TEST_ID = os.environ.get('TEST_ID', None)
 TESTBED_NAME = os.environ.get('TESTBED_NAME', None)
 
+
 # Wavefront recorder configs
 WAVEFRONT_PROXY_ADDRESS = os.environ.get('WAVEFRONT_PROXY_ADDRESS', None)
 WAVEFRONT_SERVER_ADDRESS = os.environ.get('WAVEFRONT_SERVER_ADDRESS', None)
 WAVEFRONT_SERVER_API_TOKEN = os.environ.get('WAVEFRONT_SERVER_API_TOKEN', None)
 WAVEFRONT_SOURCE_TAG = os.environ.get('WAVEFRONT_SOURCE', socket.gethostname())
+WAVEFRONT_REPORT_PERC = float(os.environ.get('WAVEFRONT_REPORT_PERC', 1.0))
+
 
 # Namespace Configs
 NAMESPACE_MODE = os.environ.get("NAMESPACE_MODE", False)
