@@ -23,42 +23,48 @@ def register_traffic(register_param):
     workload_server = register_param[0]
     rule_list = register_param[1]
     proxy_host = register_param[2]
-    with AxonClient(workload_server, proxy_host=proxy_host) as client:
+    with AxonClient(workload_server, proxy_host=proxy_host, retry_count=30,
+                     sleep_interval=1) as client:
         client.traffic.register_traffic(rule_list)
 
 
 def start_servers(start_param):
     server = start_param[0]
     proxy_host = start_param[1]
-    with AxonClient(server, proxy_host=proxy_host) as client:
+    with AxonClient(server, proxy_host=proxy_host, retry_count=30,
+                    sleep_interval=1) as client:
         client.traffic.start_servers()
 
 
 def start_clients(start_param):
     server = start_param[0]
     proxy_host = start_param[1]
-    with AxonClient(server, proxy_host=proxy_host) as client:
+    with AxonClient(server, proxy_host=proxy_host, retry_count=30,
+                    sleep_interval=1) as client:
         client.traffic.start_clients()
 
 
 def stop_servers(stop_param):
     server = stop_param[0]
     proxy_host = stop_param[1]
-    with AxonClient(server, proxy_host=proxy_host) as client:
+    with AxonClient(server, proxy_host=proxy_host, retry_count=30,
+                    sleep_interval=1) as client:
         client.traffic.stop_servers()
 
 
 def stop_clients(stop_param):
     server = stop_param[0]
     proxy_host = stop_param[1]
-    with AxonClient(server, proxy_host=proxy_host) as client:
+    with AxonClient(server, proxy_host=proxy_host, retry_count=30,
+                    sleep_interval=1) as client:
         client.traffic.stop_clients()
 
 
 def clear_traffic_rules(delete_param):
     server = delete_param[0]
     proxy_host = delete_param[1]
-    with AxonClient(server, proxy_host=proxy_host) as client:
+    with AxonClient(server, proxy_host=proxy_host, retry_count=30,
+                    sleep_interval=1) as client:
         client.traffic.delete_traffic_rules()
 
 
