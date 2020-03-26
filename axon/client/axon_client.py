@@ -87,6 +87,12 @@ class StatsManager(Manager):
             start_time=start_time, end_time=end_time,
             destination=destination, port=port, source=source)
 
+    def get_successes(self, start_time=None, end_time=None,
+                      destination=None, port=None, source=None):
+        return self._client.stats.get_successes(
+            start_time=start_time, end_time=end_time,
+            destination=destination, port=port, source=source)
+
 
 class NamespaceManager(Manager):
 
