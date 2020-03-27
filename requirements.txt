@@ -2,7 +2,7 @@
 fabric==2.4.0
 ipaddr==2.2.0
 nsenter==0.2
-psutil==5.4.7
+psutil==5.6.6
 requests==2.20.0
 rpyc==4.0.2
 six>=1.10.0
