@@ -113,7 +113,6 @@ class ResourceMetrics(Base):
         'sysmem': float,
         'axoncpu': float,
         'axonmem': float,
-        'type': str
     }
 
     FIELDS.update(Base.FIELDS)
