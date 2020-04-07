@@ -29,7 +29,7 @@ class Record(object):
         return self._timestamp
 
     def as_dict(self):
-        return json.loads(self.toJSON())
+        return self.__dict__
 
 
 class ResourceRecord(Record):

@@ -4,8 +4,8 @@
 # The full license information can be found in LICENSE.txt
 # in the root directory of this project.
 """
-App for Resource Monitoring.
-Collects System CPU/Memory as well as AXON CPU/ Memory.
+-App for Resource Monitoring.
+-Collects System CPU/Memory as well as AXON CPU/ Memory.
 """
 import logging
 import os
@@ -32,8 +32,9 @@ class ResourceMonitor(BaseApp):
         self._interval = interval
         self._switch = threading.Event()
         self._proc_name = proc_name
+        self._thread = None
 
-    def run(self):
+    def _run(self):
         while self._switch.is_set():
             t = int(time.time())
 
@@ -54,17 +55,30 @@ class ResourceMonitor(BaseApp):
 
             time.sleep(self._interval)
 
+    def is_running(self):
+        """
+        Returns True if Rescoures are being monitored else False.
+        """
+        return self._thread and self._thread.is_alive()
+
     def stop(self):
+        """
+        Stops Resource Monitoring.
+        """
         self._switch.clear()
+        if self.is_running():
+            self._thread.join()
+            self._thread = None
 
     def start(self):
         """
         Starts Resource monitoring (in a separate thread)
         """
         self._switch.set()
-        self._thread = threading.Thread(target=self.run)
-        self._thread.setDaemon(True)
-        self._thread.start()
+        if not self._thread:
+            self._thread = threading.Thread(target=self._run)
+            self._thread.setDaemon(True)
+            self._thread.start()
 
 
 if __name__ == '__main__':
