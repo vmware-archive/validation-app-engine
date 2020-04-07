@@ -15,7 +15,7 @@ def process_record_queues(args):
         try:
             t_record = queue.get()
             for recorder in recorders:
-                recorder.record_traffic(t_record)
+                recorder.write(t_record)
         except Exception:
             # TODO : change it to specific exception when queue is empty
             # Don't give error when no data is being generated.

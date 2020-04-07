@@ -128,6 +128,19 @@ class WavefrontClient(object):
         record = TrafficRecord(self._client, traffic_record)
         record.save()
 
+    def create_resource_record(self, record):
+        prefix = 'axon.resources.'
+        tags = {"datacenter": conf.TESTBED_NAME,
+                "test_id": conf.TEST_ID}
+        for key, val in record.as_dict().items():
+            if key in ['_id', '_timestamp']:
+                continue
+            metric = prefix + key
+            self._client.send_metric(
+                    name=metric, value=val,
+                    timestamp=record.timestamp,
+                    source=conf.WAVEFRONT_SOURCE_TAG, tags=tags)
+
     def create_latency_stats(self, latency_sum, samples, created):
         latency_stats = LatencyStats(
             self._client, latency_sum, samples, created)

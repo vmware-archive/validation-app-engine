@@ -95,3 +95,24 @@ class Fault(Base):
     }
 
     FIELDS.update(Base.FIELDS)
+
+
+class ResourceMetrics(Base):
+    __tablename__ = 'resourcemetrics'
+    id = Column(String(36), primary_key=True)
+    created = Column(Float())
+    syscpu = Column(Float())
+    sysmem = Column(Float())
+    axoncpu = Column(Float())
+    axonmem = Column(Float())
+    type = Column(String(10))
+
+    FIELDS = {
+        'created': float,
+        'syscpu': float,
+        'sysmem': float,
+        'axoncpu': float,
+        'axonmem': float,
+    }
+
+    FIELDS.update(Base.FIELDS)

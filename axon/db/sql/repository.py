@@ -163,3 +163,7 @@ class RequestCountRepository(BaseRepository):
         result = query.all()[0]
         return {'success': result[1] if result[1] else 0,
                 'failure': result[0] if result[0] else 0}
+
+
+class ResourceMetricsRepository(BaseRepository):
+    model_class = amodels.ResourceMetrics
