@@ -10,12 +10,15 @@ log = logging.getLogger(__name__)
 
 def process_record_queues(args):
     queue = args[0]
-    recorder = args[1]
+    recorders = args[1]
     while True:
         try:
             t_record = queue.get()
-            recorder.record_traffic(t_record)
+            for recorder in recorders:
+                recorder.record_traffic(t_record)
         except Exception:
+            # TODO : change it to specific exception when queue is empty
+            # Don't give error when no data is being generated.
             log.exception("Error in listening Traffic Record Queue")
 
 
@@ -26,12 +29,12 @@ class DBPoolManager(object):
     """
 
     def __init__(self, record_queue):
-        self._db_recorder = RecorderFactory.get_recorder()
+        self._db_recorders = RecorderFactory.get_recorders()
         self._record_queue = record_queue
 
     def run(self):
         thread_pool = ThreadPool(conf.RECORD_UPDATER_THREAD_POOL_SIZE)
         thread_pool.map(process_record_queues,
                         [(self._record_queue,
-                          self._db_recorder)] *
+                          self._db_recorders)] *
                         conf.RECORD_UPDATER_THREAD_POOL_SIZE)

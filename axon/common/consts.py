@@ -19,3 +19,4 @@ AXON_PORT = 5678
 
 # Recorder Constants
 WAVEFRONT = 'wavefront'
+SQL = 'sql'
