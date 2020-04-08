@@ -6,7 +6,7 @@ from axon.common import consts
 class RecorderFactory(object):
 
     @classmethod
-    def get_recorder(cls):
+    def get_recorders(cls):
         def get_wf_recorder():
             if conf.WAVEFRONT_PROXY_ADDRESS is not None:
                 server = conf.WAVEFRONT_PROXY_ADDRESS
@@ -18,7 +18,17 @@ class RecorderFactory(object):
                 token = conf.WAVEFRONT_SERVER_API_TOKEN
             return WaveFrontRecorder(server, proxy, token)
 
-        if conf.RECORDER and conf.RECORDER.lower() == consts.WAVEFRONT:
-            return get_wf_recorder()
-        else:
-            return SqlDbRecorder()
+
+        if not conf.RECORDER:   # no recorder specified
+            return [SqlDbRecorder()]
+
+        recorders = [x.lower() for x in conf.RECORDER.split(",")]
+        recs = []
+
+        if consts.WAVEFRONT in recorders:
+            recs.append(get_wf_recorder())
+
+        if consts.SQL in recorders:
+            recs.append(SqlDbRecorder())
+
+        return recs
