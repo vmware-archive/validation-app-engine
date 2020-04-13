@@ -9,12 +9,14 @@ set -x
 
 echo "Delete old directories and associated packages."
 rm -f ./debian/dist/*
-rm -rf ./debian/opt/*
+rm -rf ./debian/opt/
 rm -rf ./dist
 echo "Deletion successful."
 
 
 echo "Running debian builder"
+sudo mkdir -p ./debian/opt
+sudo mkdir -p ./debian/dist
 sudo cp -rf ./axon ./debian/opt/
 sudo cp -rf ./etc ./debian/opt/axon/
 sudo dpkg-deb --build ./debian ./debian/dist/axon_service.deb
