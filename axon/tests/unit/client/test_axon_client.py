@@ -74,9 +74,9 @@ class TestAxonClient(test_base.BaseTestCase):
         except Exception:
             raise
 
-    def test_get_traffic_config(self):
+    def test_get_traffic_rules(self):
         try:
-            self.traffic.get_traffic_config(self.endpoint)
+            self.traffic.get_traffic_rules(self.endpoint)
         except Exception:
             raise
 

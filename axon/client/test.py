@@ -25,14 +25,20 @@ class BasicL2ConnectivityTest(object):
     def _create_allow_rules_on_hosts(self, source, destinations):
         rule_list = []
         for destination in destinations:
-            rule_list.append((TrafficRule(Endpoint(source),
-                              Endpoint(destination),
-                              Port(12345), Protocol.TCP,
-                              Connected.CONNECTED, Action.ALLOW)))
-            rule_list.append((TrafficRule(Endpoint(source),
-                              Endpoint(destination),
-                              Port(12345), Protocol.UDP,
-                              Connected.CONNECTED, Action.ALLOW)))
+            rule_list.append(TrafficRule(Endpoint(source),
+                             Endpoint(destination),
+                             Port(12345), Protocol.TCP,
+                             Connected.CONNECTED, Action.ALLOW))
+            rule_list.append(TrafficRule(Endpoint(source),
+                             Endpoint(destination),
+                             Port(12345), Protocol.UDP,
+                             Connected.CONNECTED, Action.ALLOW))
+            rule_list.append(TrafficRule(Endpoint(source),
+                             Endpoint(destination), Port(5432), Protocol.TCP,
+                             Connected.CONNECTED, Action.ALLOW))
+            rule_list.append(TrafficRule(Endpoint(source),
+                             Endpoint(destination), Port(5432), Protocol.UDP,
+                             Connected.CONNECTED, Action.ALLOW))
         return rule_list
 
     def create_rules_with_given_hosts(self):
@@ -72,7 +78,10 @@ if __name__ == "__main__":
             print("Checking failure count for host - %s" % host)
             failure_count = client.stats.get_failure_count(
                 start_time=start_time, end_time=end_time)
+            success_count = client.stats.get_success_count(
+                start_time=start_time, end_time=end_time)
             print("Failure Count = %s " % failure_count)
+            print("sucess Count = %s " % success_count)
             if failure_count != 0:
                 raise RuntimeError("Traffic is failing."
                                    "Failure count for "

@@ -5,10 +5,10 @@
 # in the root directory of this project.
 
 import mock
+import multiprocessing as mp
 
 from axon.tests import base as test_base
 from axon.traffic.clients.clients import TrafficClient
-from axon.traffic.recorder import StreamRecorder
 
 
 class TestTCPClient(test_base.BaseTestCase):
@@ -20,16 +20,16 @@ class TestTCPClient(test_base.BaseTestCase):
     def test_tcp_traffic_client(self, mock_socket):
         source = '1.2.3.4'
         destinations = [('TCP', 12345, '1.2.3.5', True, 1)]
-        recorder = StreamRecorder()
+        record_queue = mp.Queue(2)
         _traffic_client = TrafficClient(
-            source, destinations, recorder=recorder)
+            source, destinations, record_queue)
         _traffic_client._send_traffic()
 
     @mock.patch('socket.socket')
     def test_udp_traffic_client(self, mock_socket):
         source = '1.2.3.4'
         destinations = [('UDP', 12345, '1.2.3.5', True, 1)]
-        recorder = StreamRecorder()
+        record_queue = mp.Queue(2)
         _traffic_client = TrafficClient(
-            source, destinations, recorder=recorder)
+            source, destinations, record_queue)
         _traffic_client._send_traffic()

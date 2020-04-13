@@ -12,7 +12,7 @@ like type of traffic protocols to support, range of ports allowed, type of src
 /dest IP representations to expect. It also helps in avoiding the cyclic
 dependency.
 '''
-import ipaddr
+import ipaddress
 import json
 import six
 
@@ -69,9 +69,39 @@ class Endpoint(object):
         into the list of IP addresses if a valid input.
         """
         try:
-            return list(ipaddr.IPNetwork(six.text_type(ep_address)))
+            return list(ipaddress.ip_network(six.text_type(ep_address)))
         except Exception as err:
             raise InvalidRangeError(err)
+
+    def __repr__(self):
+        return '%r' % self.ip_list
+
+
+class EndpointList(object):
+
+    def __init__(self, ep_addresses):
+        """
+        This class represents a valid recognizable endpoint address.
+        Endpoint address can be one of the following
+            - list of IP addresses,
+            - list of CIDR representation.
+        """
+        self.ep_addresses = ep_addresses
+        self.ip_list = self.expand_iprange(ep_addresses)
+
+    def expand_iprange(self, ep_address):
+        """
+        This method takes string representation as an input and expands it
+        into the list of IP addresses if a valid input.
+        """
+        ip_list = []
+        for ep_address in self.ep_addresses:
+            try:
+                ip_list.append(list(ipaddr.IPNetwork(
+                    six.text_type(ep_address))))
+            except Exception as err:
+                raise InvalidRangeError(err)
+        return ip_list
 
     def __repr__(self):
         return '%r' % self.ip_list
@@ -158,13 +188,17 @@ class TrafficRule(object):
         """
         try:
             # A rule must have destination endpoint , protocol and port.
-            assert(isinstance(src, Endpoint))
-            assert(isinstance(dst, Endpoint))
-            assert(isinstance(port, Port))
-
-            assert(action in Action.allowed)
-            assert (connected in Connected.allowed)
-            assert(protocol in Protocol.allowed)
+            assert src or dst, "At least src or dst must not be None."
+            if src is not None:
+                assert(isinstance(src, Endpoint) or
+                       isinstance(src, EndpointList)), "src must be instance of EndPoint"
+            if dst is not None:
+                assert(isinstance(dst, Endpoint) or
+                    isinstance(dst, EndpointList)), "dst must be instance of EndPoint"
+            assert(isinstance(port, Port)), "port must be instance of Port"
+            assert(action in Action.allowed), "Invalid Action"
+            assert (connected in Connected.allowed), "Invalid Connected"
+            assert(protocol in Protocol.allowed), "Invalid Protocol"
 
             self.src_eps = src
             self.dst_eps = dst

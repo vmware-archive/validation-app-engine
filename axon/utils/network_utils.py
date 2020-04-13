@@ -7,7 +7,7 @@
 import multiprocessing
 import platform
 if "Linux" in platform.uname():  # noqa
-    from nsenter import Namespace as NsenterNamespace
+    from axon.utils import nsenter
 import psutil
 import subprocess
 import axon.common.config as axon_config
@@ -41,20 +41,20 @@ class Namespace(object):
         return self._interface_list
 
     def as_dict(self):
-        return dict(zip(['name', 'id', 'interfaces'],
+        return dict(list(zip(['name', 'id', 'interfaces'],
                         [self.name, self.id, [interface.as_dict() for
-                                              interface in self.interfaces]]))
+                                              interface in self.interfaces]])))
 
     def _discover_interfaces(self):
         ns_path = '/var/run/netns/%s' % self.name
         manager = multiprocessing.Manager()
         return_dict = manager.dict()
-        with NsenterNamespace(ns_path, 'net'):
+        with nsenter.namespace(ns_path, 'net'):
             process = multiprocessing.Process(
                 target=get_interfaces_in_namespace, args=(return_dict,))
             process.start()
             process.join()
-        for name, snics in return_dict['result'].items():
+        for name, snics in list(return_dict['result'].items()):
             for nic in [snic for snic in snics if snic.family == 2]:
                 self._interface_list.append(Interface(
                     name, nic.address, nic.family,
@@ -79,8 +79,8 @@ class NamespaceManager(object):
             ns_list = subprocess.check_output(["ip", "netns", "list"])
             if not ns_list:
                 return
-            for ns in ns_list.rstrip().split("\n"):
-                ns_info = ns.split()
+            for ns in ns_list.decode().rstrip().split("\n"):
+                ns_info = str(ns).split()
                 id = None
                 if len(ns_info) > 1:
                     id = ns_info[1]
@@ -102,7 +102,7 @@ class NamespaceManager(object):
         :return: List of namespace names
         :rtype: list
         """
-        return self._namespace_map.keys()
+        return list(self._namespace_map.keys())
 
     def get_namespace(self, namespace):
         ns = self._namespace_map.get(namespace)
@@ -119,7 +119,7 @@ class NamespaceManager(object):
         :rtype: list
         """
         namespaces_ips = []
-        for np in self._namespace_map.values():
+        for np in list(self._namespace_map.values()):
             interface = [iface for iface in np.interfaces for prefix in
                          axon_config.NAMESPACE_INTERFACE_NAME_PREFIXES
                          if prefix in iface.name]
@@ -161,9 +161,9 @@ class Interface(object):
         return self._broadcast
 
     def as_dict(self):
-        return dict(zip(['name', 'address', 'family', 'netmask', 'broadcast'],
+        return dict(list(zip(['name', 'address', 'family', 'netmask', 'broadcast'],
                         [self.name, self.address, self.family, self.netmask,
-                         self.broadcast]))
+                         self.broadcast])))
 
 
 class InterfaceManager(object):
@@ -176,7 +176,7 @@ class InterfaceManager(object):
 
     def _discover_interfaces(self):
         addrs = psutil.net_if_addrs()
-        for name, snics in addrs.items():
+        for name, snics in list(addrs.items()):
             for nic in [snic for snic in snics if snic.family == 2]:
                 self._interface_map[name] = Interface(
                     name, nic.address, nic.family,
@@ -188,7 +188,7 @@ class InterfaceManager(object):
         :return:
         :rtype:
         """
-        return self._interface_map.keys()
+        return list(self._interface_map.keys())
 
     def get_interface(self, name):
         """
@@ -205,6 +205,6 @@ class InterfaceManager(object):
             return None
 
     def get_interface_by_ip(self, ip):
-        for name, interface in self._interface_map.items():
+        for name, interface in list(self._interface_map.items()):
             if interface.address == ip:
                 return name

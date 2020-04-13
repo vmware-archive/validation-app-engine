@@ -25,7 +25,7 @@ class TestAxonController(test_base.BaseTestCase):
 
     @mock.patch('rpyc.utils.server.ThreadPoolServer.__init__')
     def _local_setup(self, mock_server_init):
-        with mock.patch('axon.db.local.models.Base.metadata.create_all')\
+        with mock.patch('axon.db.sql.config.models.Base.metadata.create_all')\
                 as mock_db_conn:
             mock_db_conn.return_value = None
             mock_server_init.return_value = None
@@ -34,7 +34,7 @@ class TestAxonController(test_base.BaseTestCase):
     @mock.patch('axon.controller.axon_rpyc_controller.AxonController.start')
     @mock.patch('rpyc.utils.server.ThreadPoolServer.__init__')
     def test_main(self, mock_server_init, mock_start):
-        with mock.patch('axon.db.local.models.Base.metadata.create_all')\
+        with mock.patch('axon.db.sql.config.models.Base.metadata.create_all')\
                 as mock_db_conn:
             mock_db_conn.return_value = None
             mock_server_init.return_value = None

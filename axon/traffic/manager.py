@@ -11,7 +11,7 @@ import six
 import platform
 import threading
 if "Linux" in platform.uname():  # noqa
-    from nsenter import Namespace
+    from axon.utils import nsenter
 
 from axon.traffic.servers import create_server_class
 from axon.traffic.workers import WorkerProcess
@@ -76,7 +76,7 @@ class ServerRegistry(object):
         Get all server objects
         """
         with self.lock:
-            return self.__registry.items()
+            return list(self.__registry.items())
 
 
 class ClientRegistry(object):
@@ -127,7 +127,7 @@ class ClientRegistry(object):
         Get all client objects
         """
         with self.lock:
-            return self.__registry.items()
+            return list(self.__registry.items())
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -216,7 +216,7 @@ class RootNsServerManager(ServerManager):
     def stop_all_servers(self):
         servers = [(conf, server) for ns, conf_server_map in
                    self._server_registry.get_all_servers() for
-                   conf, server in conf_server_map.items()]
+                   conf, server in list(conf_server_map.items())]
         for conf, server in servers:
             self.log.info(
                 "Stopping %s server on port %s" % (conf[1], conf[0]))
@@ -238,13 +238,13 @@ class RootNsServerManager(ServerManager):
     def list_servers(self):
         servers = [(ns, conf) for ns, conf_server_map in
                    self._server_registry.get_all_servers() for
-                   conf, server in conf_server_map.items()]
+                   conf, server in list(conf_server_map.items())]
         return servers
 
     def get_server(self, protocol, port, namespace=None):
         servers = [(ns, conf) for ns, conf_server_map in
                    self._server_registry.get_all_servers() for
-                   conf, server in conf_server_map.items() if
+                   conf, server in list(conf_server_map.items()) if
                    conf[0] == port and conf[1] == protocol]
         return servers
 
@@ -273,7 +273,7 @@ class NamespaceServerManager(RootNsServerManager):
         try:
             server_cls, args, kwargs = create_server_class(protocol, port, src)
             process = WorkerProcess(server_cls, args, kwargs)
-            with Namespace(self._ns_full_path, 'net'):
+            with nsenter.namespace(self._ns_full_path, 'net'):
                 process.start()
             self._server_registry.add_server(
                 self._ns, port, protocol, process)
@@ -291,7 +291,7 @@ class NamespaceServerManager(RootNsServerManager):
                 "Stop %s server on port %s in namespace %s" %
                 (protocol, port, self._ns))
             if server_process and server_process.is_running():
-                with Namespace(self._ns_full_path, 'net'):
+                with nsenter.namespace(self._ns_full_path, 'net'):
                     server_process.stop()
                     self._server_registry.remove_server(
                         self._ns, port, protocol)
@@ -345,9 +345,10 @@ class RootNsClientManager(ClientManager):
 
     ROOT_NAMESPACE_NAME = 'localhost'
 
-    def __init__(self):
+    def __init__(self, record_queue):
         self._client_registry = ClientRegistry()
         self.log = logging.getLogger(__name__)
+        self._record_queue = record_queue
 
     def start_client(self, src, clients):
         self.log.info("Starting client process on interface %s" % src)
@@ -357,7 +358,7 @@ class RootNsClientManager(ClientManager):
             return
         try:
             process = WorkerProcess(
-                TrafficClient, (src, clients), {})
+                TrafficClient, (src, clients, self._record_queue), {})
             process.start()
             self._client_registry.add_client(self.ROOT_NAMESPACE_NAME, process)
         except Exception as e:
@@ -403,8 +404,8 @@ class NamespaceClientManager(RootNsClientManager):
 
     NAMESPACE_PATH = '/var/run/netns/'
 
-    def __init__(self, namespace):
-        super(NamespaceClientManager, self).__init__()
+    def __init__(self, namespace, record_queue):
+        super(NamespaceClientManager, self).__init__(record_queue)
         self._ns = namespace
         self._ns_full_path = self.NAMESPACE_PATH + self._ns
 
@@ -415,8 +416,8 @@ class NamespaceClientManager(RootNsClientManager):
             return
         try:
             process = WorkerProcess(
-                TrafficClient, (src, clients), {})
-            with Namespace(self._ns_full_path, 'net'):
+                TrafficClient, (src, clients, self._record_queue), {})
+            with nsenter.namespace(self._ns_full_path, 'net'):
                 process.start()
                 self._client_registry.add_client(self._ns, process)
         except Exception as e:
@@ -428,7 +429,7 @@ class NamespaceClientManager(RootNsClientManager):
         try:
             client = self._client_registry.get_client(self._ns)
             if client and client.is_running():
-                with Namespace(self._ns_full_path, 'net'):
+                with nsenter.namespace(self._ns_full_path, 'net'):
                     client.stop()
                     self._client_registry.remove_client(self._ns)
             elif client and not client.is_running():
