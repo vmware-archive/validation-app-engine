@@ -28,6 +28,6 @@ class TestTrafficController(test_base.BaseTestCase):
 
     def test_as_dict(self):
         resp = self.traffic_record.as_dict()
-        self.assertIn('servers', resp.keys())
-        self.assertIn('endpoint', resp.keys())
-        self.assertIn('clients', resp.keys())
+        self.assertIn('servers', list(resp.keys()))
+        self.assertIn('endpoint', list(resp.keys()))
+        self.assertIn('clients', list(resp.keys()))
