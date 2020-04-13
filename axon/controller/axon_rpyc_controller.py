@@ -9,12 +9,15 @@ import logging
 import rpyc
 from rpyc.utils.server import ThreadPoolServer
 
+from axon.common import config as conf
 from axon.apps.traffic import TrafficApp
 from axon.apps.stats import StatsApp
 from axon.apps.namespace import NamespaceApp
 from axon.apps.interface import InterfaceApp
-from axon.common import config as conf
-from axon.db.local import init_session
+from axon.common import consts
+from axon.db.sql.config import init_session as cinit_session
+from axon.db.sql.analytics import init_session as ainit_session
+import collections
 
 rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 
@@ -22,7 +25,7 @@ rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 def exposify(cls):
     for key in dir(cls):
         val = getattr(cls, key)
-        if callable(val) and not key.startswith("_"):
+        if isinstance(val, collections.Callable) and not key.startswith("_"):
             setattr(cls, "exposed_%s" % (key,), val)
     return cls
 
@@ -65,7 +68,8 @@ class AxonService(AxonServiceBase):
 
     def __init__(self):
         super(AxonService, self).__init__()
-        init_session()
+        cinit_session()
+        ainit_session()
         self.exposed_traffic = exposed_Traffic(conf)
         self.exposed_stats = exposed_Stats()
         self.exposed_namespace = exposed_Namespace()
@@ -75,7 +79,7 @@ class AxonService(AxonServiceBase):
 class AxonController(object):
 
     def __init__(self):
-        self.axon_port = conf.AXON_PORT
+        self.axon_port = consts.AXON_PORT
         self.service = AxonService()
         self.protocol_config = self.service.RPYC_PROTOCOL_CONFIG
         self.logger = logging.getLogger(__name__)

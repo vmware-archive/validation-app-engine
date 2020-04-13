@@ -18,6 +18,6 @@ echo "copying axon service file to systemd"
 sudo cp /opt/axon/etc/axon.service /etc/systemd/system/axon.service
 echo "reloading daemon"
 sudo systemctl daemon-reload
-echo "sytarting axon daemon"
+echo "starting axon daemon"
 sudo systemctl start axon
 sudo systemctl enable axon

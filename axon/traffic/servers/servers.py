@@ -12,7 +12,7 @@ from six.moves import socketserver
 import subprocess
 from six.moves.BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 
-from axon.common.consts import REQUEST_QUEUE_SIZE, PACKET_SIZE,\
+from axon.common.config import REQUEST_QUEUE_SIZE, PACKET_SIZE,\
     ALLOW_REUSE_ADDRESS
 
 

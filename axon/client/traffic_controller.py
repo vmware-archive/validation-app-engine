@@ -56,5 +56,5 @@ class TrafficRecord(object):
                 protocol, port, destination, connected, action))
 
     def as_dict(self):
-        return dict(zip(['endpoint', 'servers', 'clients'],
-                        [self._endpoint, self._servers, self._clients]))
+        return dict(list(zip(['endpoint', 'servers', 'clients'],
+                        [self._endpoint, self._servers, self._clients])))

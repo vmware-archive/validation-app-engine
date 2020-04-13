@@ -8,7 +8,7 @@ import mock
 import time
 
 from axon.apps.stats import StatsApp
-from axon.db.local.repository import TrafficRecordsRepositery
+from axon.db.sql.repository import TrafficRecordsRepositery
 from axon.tests import base as test_base
 
 
@@ -21,7 +21,7 @@ class TestStatsApp(test_base.BaseTestCase):
         super(TestStatsApp, self).setUp()
         self._stats_app = StatsApp()
 
-    @mock.patch('axon.db.local.session_scope')
+    @mock.patch('axon.db.sql.analytics.session_scope')
     @mock.patch.object(TrafficRecordsRepositery, 'get_record_count')
     def test_get_failure_count(self, mock_rc, mock_session):
         mock_rc.return_value = 10
@@ -38,7 +38,7 @@ class TestStatsApp(test_base.BaseTestCase):
         mock_rc.assert_called()
         self.assertEqual(10, result)
 
-    @mock.patch('axon.db.local.session_scope')
+    @mock.patch('axon.db.sql.analytics.session_scope')
     @mock.patch.object(TrafficRecordsRepositery, 'get_record_count')
     def test_get_success_count(self, mock_rc, mock_session):
         mock_rc.return_value = 10
@@ -55,7 +55,7 @@ class TestStatsApp(test_base.BaseTestCase):
         mock_rc.assert_called()
         self.assertEqual(10, result)
 
-    @mock.patch('axon.db.local.session_scope')
+    @mock.patch('axon.db.sql.analytics.session_scope')
     @mock.patch.object(TrafficRecordsRepositery, 'get_records')
     def test_get_failures(self, mock_records, mock_session):
         mock_records.return_value = 'fake_failures'

@@ -4,6 +4,7 @@
 # The full license information can be found in LICENSE.txt
 # in the root directory of this project.
 
+from collections import defaultdict
 import os
 import logging
 import pickle
@@ -14,6 +15,7 @@ from axon.client.axon_client import AxonClient
 
 WORKLOAD_VIF_MAP_FILE_PATH = "/var/lib/axon/workloadvifs/"
 WORKLOAD_VIF_MAP_FILE = "workload_vif_map.pkl"
+THREADPOOL_SIZE = 50
 log = logging.getLogger(__name__)
 
 
@@ -21,37 +23,49 @@ def register_traffic(register_param):
     workload_server = register_param[0]
     rule_list = register_param[1]
     proxy_host = register_param[2]
-    with AxonClient(workload_server, proxy_host=proxy_host) as client:
-        for rule in rule_list:
-            client.traffic.register_traffic([rule.as_dict()])
+    with AxonClient(workload_server, proxy_host=proxy_host, retry_count=30,
+                     sleep_interval=1) as client:
+        client.traffic.register_traffic(rule_list)
 
 
 def start_servers(start_param):
     server = start_param[0]
     proxy_host = start_param[1]
-    with AxonClient(server, proxy_host=proxy_host) as client:
+    with AxonClient(server, proxy_host=proxy_host, retry_count=30,
+                    sleep_interval=1) as client:
         client.traffic.start_servers()
 
 
 def start_clients(start_param):
     server = start_param[0]
     proxy_host = start_param[1]
-    with AxonClient(server, proxy_host=proxy_host) as client:
+    with AxonClient(server, proxy_host=proxy_host, retry_count=30,
+                    sleep_interval=1) as client:
         client.traffic.start_clients()
 
 
 def stop_servers(stop_param):
     server = stop_param[0]
     proxy_host = stop_param[1]
-    with AxonClient(server, proxy_host=proxy_host) as client:
+    with AxonClient(server, proxy_host=proxy_host, retry_count=30,
+                    sleep_interval=1) as client:
         client.traffic.stop_servers()
 
 
 def stop_clients(stop_param):
     server = stop_param[0]
     proxy_host = stop_param[1]
-    with AxonClient(server, proxy_host=proxy_host) as client:
+    with AxonClient(server, proxy_host=proxy_host, retry_count=30,
+                    sleep_interval=1) as client:
         client.traffic.stop_clients()
+
+
+def clear_traffic_rules(delete_param):
+    server = delete_param[0]
+    proxy_host = delete_param[1]
+    with AxonClient(server, proxy_host=proxy_host, retry_count=30,
+                    sleep_interval=1) as client:
+        client.traffic.delete_traffic_rules()
 
 
 class WorkloadVifsMap(object):
@@ -87,7 +101,7 @@ class WorkloadVifsMap(object):
     def load_workloads_vifs_map(self):
         log.info("Loading workloads_vifs map")
         with open(os.path.join(
-                WORKLOAD_VIF_MAP_FILE_PATH, WORKLOAD_VIF_MAP_FILE)) as wv_map:
+                WORKLOAD_VIF_MAP_FILE_PATH, WORKLOAD_VIF_MAP_FILE), "rb") as wv_map:
             self.workload_vif_map = pickle.loads(wv_map.read())
             self.vif_map_load = True
 
@@ -110,47 +124,40 @@ class DataCenterTrafficController(TrafficController):
     def __init__(self, gateway_host=None):
         super(DataCenterTrafficController, self).__init__()
         self._gw_host = gateway_host
-        self._workload_servers = dict()
-        self._servers = dict()
+        self._workload_servers = defaultdict(list)
         self.__map_obj = WorkloadVifsMap()
+        self._servers = dict()
         self.__map_obj.load_workloads_vifs_map()
 
     def get_associated_workload(self, vif):
         if self.__map_obj.vif_map_load:
             return self.__map_obj.workload_vif_map.get(vif)
 
-    def register_traffic(self, traffic_config):
+    def __create_rules(self, traffic_config):
         for trule in traffic_config:
             src_vif = str(trule.src_eps.ip_list[0])
             dst_vif = str(trule.dst_eps.ip_list[0])
+            if not self._servers.get(str(src_vif)):
+                self._servers[str(src_vif)] = TrafficRecord(src_vif)
+            if not self._servers.get(str(dst_vif)):
+                self._servers[str(dst_vif)] = TrafficRecord(dst_vif)
+            self._servers[str(src_vif)].add_client(
+                trule.protocol, trule.port.port,
+                dst_vif, trule.connected,
+                trule.action)
+            self._servers[str(dst_vif)].add_server(
+                trule.protocol, trule.port.port)
 
-            src_traffic_record = TrafficRecord(src_vif)
-            src_traffic_record.add_client(trule.protocol, trule.port.port,
-                                          dst_vif, trule.connected,
-                                          trule.action)
-            dst_traffic_record = TrafficRecord(dst_vif)
-            dst_traffic_record.add_server(trule.protocol, trule.port.port)
-
-            workload_src = self.get_associated_workload(src_vif)
-            workload_dst = self.get_associated_workload(dst_vif)
-            src = workload_src if workload_src else src_vif
-            dst = workload_dst if workload_dst else dst_vif
-            # src
-            if not self._workload_servers.get(src):
-                self._workload_servers[str(src)] = [src_traffic_record]
-            else:
-                self._workload_servers[str(src)].append(src_traffic_record)
-
-            # dst
-            if not self._workload_servers.get(str(dst)):
-                self._workload_servers[dst] = [dst_traffic_record]
-            else:
-                self._workload_servers[dst].append(dst_traffic_record)
-
-        pool = ThreadPool(50)
+    def register_traffic(self, traffic_config):
+        self.__create_rules(traffic_config)
+        for vif, rule in list(self._servers.items()):
+            workload = self.get_associated_workload(vif)
+            workload = workload if workload else vif
+            self._workload_servers[str(workload)].append(rule.as_dict())
+        pool = ThreadPool(THREADPOOL_SIZE)
         params = [(workload_server, rule_list, self._gw_host) for
                   workload_server, rule_list in
-                  self._workload_servers.items()]
+                  list(self._workload_servers.items())]
         pool.map(register_traffic, params)
         pool.close()
         pool.join()
@@ -159,42 +166,52 @@ class DataCenterTrafficController(TrafficController):
         pass
 
     def __stop_clients(self, servers):
-        servers = servers if servers else self._workload_servers.keys()
+        servers = servers if servers else list(self._workload_servers.keys())
         if not servers:
             return
-        pool = ThreadPool(50)
+        pool = ThreadPool(THREADPOOL_SIZE)
         params = [(server, self._gw_host) for server in servers]
         pool.map(stop_clients, params)
         pool.close()
         pool.join()
 
     def __stop_servers(self, servers):
-        servers = servers if servers else self._workload_servers.keys()
+        servers = servers if servers else list(self._workload_servers.keys())
         if not servers:
             return
-        pool = ThreadPool(50)
+        pool = ThreadPool(THREADPOOL_SIZE)
         params = [(server, self._gw_host) for server in servers]
         pool.map(stop_servers, params)
         pool.close()
         pool.join()
 
     def __start_servers(self, servers):
-        servers = servers if servers else self._workload_servers.keys()
+        servers = servers if servers else list(self._workload_servers.keys())
         if not servers:
             return
-        pool = ThreadPool(50)
+        pool = ThreadPool(THREADPOOL_SIZE)
         params = [(server, self._gw_host) for server in servers]
         pool.map(start_servers, params)
         pool.close()
         pool.join()
 
     def __start_clients(self, servers):
-        servers = servers if servers else self._workload_servers.keys()
+        servers = servers if servers else list(self._workload_servers.keys())
         if not servers:
             return
-        pool = ThreadPool(50)
+        pool = ThreadPool(THREADPOOL_SIZE)
         params = [(server, self._gw_host) for server in servers]
         pool.map(start_clients, params)
+        pool.close()
+        pool.join()
+
+    def clear_all_traffic_rules(self, servers=None):
+        servers = servers if servers else list(self._workload_servers.keys())
+        if not servers:
+            return
+        pool = ThreadPool(THREADPOOL_SIZE)
+        params = [(server, self._gw_host) for server in servers]
+        pool.map(clear_traffic_rules, params)
         pool.close()
         pool.join()
 

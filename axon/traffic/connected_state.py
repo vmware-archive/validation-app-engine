@@ -8,8 +8,8 @@ import abc
 import logging
 import six
 
-from axon.db.local import session_scope
-from axon.db.local.repository import Repositories
+from axon.db.sql.config import session_scope
+from axon.db.sql.repository import Repositories
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -190,7 +190,7 @@ class ConnectedStateProcessor(object):
             else:
                 client_map.pop((protocol, port, destination), None)
 
-        return client_map.values()
+        return list(client_map.values())
 
     def create_or_update_connected_state(
             self, endpoint, servers=None, clients=None):
