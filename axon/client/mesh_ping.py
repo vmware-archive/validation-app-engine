@@ -8,7 +8,7 @@ import argparse
 import six
 import sys
 
-import ipaddr
+import ipaddress
 
 from axon.client.utils import create_mesh_ping_topo_from_cidr
 from axon.client.basic_traffic_controller import BasicTrafficController
@@ -22,7 +22,7 @@ def build_parser():
 
 
 def start_traffic(cidr):
-    network = ipaddr.IPNetwork(six.text_type(cidr)).iterhosts()
+    network = ipaddress.ip_network(six.text_type(cidr)).hosts()
     rule_list = create_mesh_ping_topo_from_cidr(list(network))
     controller = BasicTrafficController()
     controller.register_traffic(rule_list)
