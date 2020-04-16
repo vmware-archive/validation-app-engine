@@ -132,7 +132,9 @@ class WavefrontClient(object):
         prefix = 'axon.resources.'
         tags = {"datacenter": conf.TESTBED_NAME,
                 "test_id": conf.TEST_ID}
-        for key, val in record.as_dict():
+        for key, val in record.as_dict().items():
+            if key in ['_id', '_timestamp']:
+                continue
             metric = prefix + key
             self._client.send_metric(
                     name=metric, value=val,
