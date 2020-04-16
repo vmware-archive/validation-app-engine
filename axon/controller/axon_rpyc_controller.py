@@ -15,6 +15,7 @@ from axon.apps.traffic import TrafficApp
 from axon.apps.stats import StatsApp
 from axon.apps.namespace import NamespaceApp
 from axon.apps.interface import InterfaceApp
+from axon.apps.monitor import ResourceMonitor
 from axon.common import consts
 from axon.db.sql.config import init_session as cinit_session
 from axon.db.sql.analytics import init_session as ainit_session
@@ -51,6 +52,11 @@ class exposed_Interface(InterfaceApp):
     pass
 
 
+@exposify
+class exposed_ResourceMonitor(ResourceMonitor):
+    pass
+
+
 class AxonServiceBase(rpyc.Service):
 
     RPYC_PROTOCOL_CONFIG = rpyc.core.protocol.DEFAULT_CONFIG
@@ -78,6 +84,7 @@ class AxonService(AxonServiceBase):
         self.exposed_stats = exposed_Stats()
         self.exposed_namespace = exposed_Namespace()
         self.exposed_interface = exposed_Interface()
+        self.resource_monitor = ResourceMonitor(self._record_queue)
 
 
 class AxonController(object):
@@ -99,8 +106,15 @@ class AxonController(object):
         try:
             self.service.exposed_traffic.start_servers()
             self.service.exposed_traffic.start_clients()
+            self.service.resource_monitor.start()
         except Exception:
             self.logger.exception("Ooops!! Exception during Traffic Start")
+
+        try:
+            self.service.resource_monitor.start()
+        except Exception as err:
+            self.logger.exception("Error in starting Resource Monitoring - "
+                                  "%r", err)
         self.axon_service.start()
 
     def stop(self):
@@ -109,6 +123,13 @@ class AxonController(object):
             self.service.exposed_traffic.stop_servers()
         except Exception:
             self.logger.exception("Ooops!! Exception during Traffic Stop")
+
+        try:
+            self.service.resource_monitor.stop()
+        except Exception as err:
+            self.logger.exception("Error while stopping Resource Monitoring - "
+                                  "%r", err)
+
         self.axon_service.close()
 
 
