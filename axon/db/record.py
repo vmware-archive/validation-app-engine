@@ -36,7 +36,7 @@ class ResourceRecord(Record):
 
     def __init__(self, syscpu=None, sysmem=None, axoncpu=None, axonmem=None):
         super(ResourceRecord, self).__init__()
-        self.syscpu = syscpu 
+        self.syscpu = syscpu
         self.sysmem = sysmem
         self.axoncpu = axoncpu
         self.axonmem = axonmem

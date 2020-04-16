@@ -14,13 +14,24 @@ from axon.db.record_count import SqlRecordCountHandler, \
     WavefrontRecordCountHandler
 from axon.db.record import ResourceRecord
 
-class TrafficRecorder(object):
+class RecordHandler(object):
+
+    def write(self, record):
+        if isinstance(record, ResourceRecord):
+            self.record_resource(record)
+        else:
+            self.record_traffic(record)
 
     def record_traffic(self, record):
         raise NotImplementedError()
 
+    def record_resource(self, record):
+        msg = ("Handling of resource record is not supported on this"
+               " type of recorder. Record - {%s}" % record)
+        self.log.warn(msg)
 
-class StreamRecorder(TrafficRecorder):
+
+class StreamRecorder(RecordHandler):
     def record_traffic(self, record):
         print(
             "Traffic:%s Source:%s Destination:%s Latency:%s Success:%s"
@@ -29,7 +40,7 @@ class StreamRecorder(TrafficRecorder):
                           record.success, record.error))
 
 
-class LogFileRecorder(TrafficRecorder):
+class LogFileRecorder(RecordHandler):
     def __init__(self, log_file):
         super(LogFileRecorder, self).__init__()
         self.log = self._get_logger(log_file)
@@ -52,7 +63,7 @@ class LogFileRecorder(TrafficRecorder):
                           record.success, record.error))
 
 
-class SqlDbRecorder(TrafficRecorder):
+class SqlDbRecorder(RecordHandler):
     log = logging.getLogger(__name__)
 
     def __init__(self):
@@ -71,7 +82,7 @@ class SqlDbRecorder(TrafficRecorder):
                 "Exception %s happened during recording traffic" % e)
 
 
-class WaveFrontRecorder(TrafficRecorder):
+class WaveFrontRecorder(RecordHandler):
     log = logging.getLogger(__name__)
 
     def __init__(self, host, proxy=False, token=None):
@@ -81,8 +92,8 @@ class WaveFrontRecorder(TrafficRecorder):
         WavefrontRecordCountHandler(self._queue, self._wf_client).start()
 
     def record_traffic(self, record):
-        if isinstance(record, ResourceRecord):
-            self._wf_client.create_resource_record(record)
-        else:
-            self._queue.put(record)
-            self._wf_client.create_traffic_record(record)
+        self._queue.put(record)
+        self._wf_client.create_traffic_record(record)
+
+    def record_resource(self, record):
+        self._wf_client.create_resource_record(record)
