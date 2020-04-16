@@ -5,6 +5,7 @@
 # in the root directory of this project.
 
 import logging
+from multiprocessing import Queue
 
 import rpyc
 from rpyc.utils.server import ThreadPoolServer
@@ -65,12 +66,15 @@ class AxonServiceBase(rpyc.Service):
 
 
 class AxonService(AxonServiceBase):
+    RECORD_QUEUE_SIZE = 50000
 
     def __init__(self):
         super(AxonService, self).__init__()
         cinit_session()
         ainit_session()
-        self.exposed_traffic = exposed_Traffic(conf)
+        self._record_queue = Queue(self.RECORD_QUEUE_SIZE)
+        self.exposed_traffic = exposed_Traffic(conf,
+                                               self._record_queue)
         self.exposed_stats = exposed_Stats()
         self.exposed_namespace = exposed_Namespace()
         self.exposed_interface = exposed_Interface()

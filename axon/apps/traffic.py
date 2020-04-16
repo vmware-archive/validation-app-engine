@@ -22,12 +22,12 @@ RECORD_QUEUE_SIZE = 5000
 
 class TrafficApp(object):
 
-    def __init__(self, config):
+    def __init__(self, config, record_queue=None):
         self.log = logging.getLogger(__name__)
         self._conf = config
         self._cs_db = ConnectedStateProcessor(DBConnectedState())
         namespaces = NamespaceManager().get_all_namespaces()
-        record_queue = Queue(RECORD_QUEUE_SIZE)
+        record_queue = Queue(RECORD_QUEUE_SIZE) if record_queue is None else record_queue
         if namespaces and self._conf.NAMESPACE_MODE:
             self.namespace_mode = True
             self._server_agent = AxonNameSpaceServerAgent()
