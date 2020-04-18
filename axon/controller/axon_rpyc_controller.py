@@ -106,7 +106,6 @@ class AxonController(object):
         try:
             self.service.exposed_traffic.start_servers()
             self.service.exposed_traffic.start_clients()
-            self.service.resource_monitor.start()
         except Exception:
             self.logger.exception("Ooops!! Exception during Traffic Start")
 
