@@ -1,5 +1,11 @@
+#!/usr/bin/env python
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: BSD-2 License
+# The full license information can be found in LICENSE.txt
+# in the root directory of this project.
 """
-Resource Monitoring Module for endponts.
+-App for Resource Monitoring.
+-Collects System CPU/Memory as well as AXON CPU/ Memory.
 """
 import logging
 import os
@@ -48,7 +54,7 @@ class ResourceMonitor(BaseApp):
                           rec)
 
             time.sleep(self._interval)
-    
+
     def is_running(self):
         """
         Returns True if Rescoures are being monitored else False.
