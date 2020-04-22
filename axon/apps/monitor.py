@@ -35,13 +35,13 @@ class ResourceMonitor(BaseApp):
         self._thread = None
 
     def _run(self):
+        p = psutil.Process(os.getpid())
         while self._switch.is_set():
             t = int(time.time())
 
             sys_cpu_percent = psutil.cpu_percent()
             sys_mem_percent = psutil.virtual_memory().percent
 
-            p = psutil.Process(os.getpid())
             axon_cpu_percent = p.cpu_percent()
             axon_mem_percent = p.memory_percent()
 
