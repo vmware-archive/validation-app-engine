@@ -34,12 +34,15 @@ class Record(object):
 
 class ResourceRecord(Record):
 
-    def __init__(self, syscpu=None, sysmem=None, axoncpu=None, axonmem=None):
+    def __init__(self, syscpu=None, sysmem=None, sysconns=None,
+                 axoncpu=None, axonmem=None, axonconns=None):
         super(ResourceRecord, self).__init__()
         self.syscpu = syscpu
         self.sysmem = sysmem
+        self.sysconns = sysconns
         self.axoncpu = axoncpu
         self.axonmem = axonmem
+        self.axonconns = axonconns
 
 
 class TrafficRecord(Record):
