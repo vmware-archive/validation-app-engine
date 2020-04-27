@@ -39,14 +39,18 @@ class ResourceMonitor(BaseApp):
         while self._switch.is_set():
             t = int(time.time())
 
-            sys_cpu_percent = psutil.cpu_percent()
-            sys_mem_percent = psutil.virtual_memory().percent
+            sys_cpu_percent = round(psutil.cpu_percent(), 2)
+            sys_mem_percent = round(psutil.virtual_memory().percent, 2)
+            sys_net_conns = int(len(psutil.net_connections()))
 
-            axon_cpu_percent = p.cpu_percent()
-            axon_mem_percent = p.memory_percent()
+            axon_cpu_percent = round(p.cpu_percent(), 2)
+            axon_mem_percent = round(p.memory_percent(), 2)
+            axon_net_conns = int(len(p.connections()))
 
             rec = ResourceRecord(sys_cpu_percent, sys_mem_percent,
-                                 axon_cpu_percent, axon_mem_percent)
+                                 sys_net_conns,
+                                 axon_cpu_percent, axon_mem_percent,
+                                 axon_net_conns)
             try:
                 self._rqueue.put(rec, block=False, timeout=2)
             except queue.Full:
