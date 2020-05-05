@@ -12,6 +12,7 @@ class BaseApp(object):
 
     NAME = ''
 
+    @property
     def name(self):
         """
         Returns name of the App.
