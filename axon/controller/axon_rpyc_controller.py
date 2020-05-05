@@ -11,11 +11,12 @@ import rpyc
 from rpyc.utils.server import ThreadPoolServer
 
 from axon.common import config as conf
-from axon.apps.traffic import TrafficApp
-from axon.apps.stats import StatsApp
-from axon.apps.namespace import NamespaceApp
+
 from axon.apps.interface import InterfaceApp
 from axon.apps.monitor import ResourceMonitor
+from axon.apps.namespace import NamespaceApp
+from axon.apps.stats import StatsApp
+from axon.apps.traffic import TrafficApp
 from axon.common import consts
 from axon.db.sql.config import init_session as cinit_session
 from axon.db.sql.analytics import init_session as ainit_session
@@ -84,7 +85,7 @@ class AxonService(AxonServiceBase):
         self.exposed_stats = exposed_Stats()
         self.exposed_namespace = exposed_Namespace()
         self.exposed_interface = exposed_Interface()
-        self.resource_monitor = ResourceMonitor(self._record_queue)
+        self.exposed_resource_monitor = exposed_ResourceMonitor(self._record_queue)
 
 
 class AxonController(object):
@@ -110,7 +111,7 @@ class AxonController(object):
             self.logger.exception("Ooops!! Exception during Traffic Start")
 
         try:
-            self.service.resource_monitor.start()
+            self.service.exposed_resource_monitor.start()
         except Exception as err:
             self.logger.exception("Error in starting Resource Monitoring - "
                                   "%r", err)
@@ -124,7 +125,7 @@ class AxonController(object):
             self.logger.exception("Ooops!! Exception during Traffic Stop")
 
         try:
-            self.service.resource_monitor.stop()
+            self.service.exposed_resource_monitor.stop()
         except Exception as err:
             self.logger.exception("Error while stopping Resource Monitoring - "
                                   "%r", err)

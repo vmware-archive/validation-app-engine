@@ -16,6 +16,12 @@ from axon.db.record import ResourceRecord
 
 class RecordHandler(object):
 
+    def __init__(self):
+        """
+        Record handler for all types of records.
+        """
+        self._warned = False
+
     def write(self, record):
         if isinstance(record, ResourceRecord):
             self.record_resource(record)
@@ -28,7 +34,9 @@ class RecordHandler(object):
     def record_resource(self, record):
         msg = ("Handling of resource record is not supported on this"
                " type of recorder. Record - {%s}" % record)
-        self.log.warn(msg)
+        if not self._warned:    #TODO : get this away
+            self.log.warn(msg)
+            self._warned = True
 
 
 class StreamRecorder(RecordHandler):
