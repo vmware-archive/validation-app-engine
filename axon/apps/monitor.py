@@ -83,18 +83,3 @@ class ResourceMonitor(BaseApp):
             self._thread = threading.Thread(target=self._run)
             self._thread.setDaemon(True)
             self._thread.start()
-
-
-if __name__ == '__main__':
-    q = queue.Queue()   # Queue()
-    monitor = ResourceMonitor(rqueue=q)
-    monitor.start()
-
-    time.sleep(10)
-
-    while True:
-        try:
-            rec = q.get(block=False)
-            print (rec)
-        except queue.Empty:
-            break
