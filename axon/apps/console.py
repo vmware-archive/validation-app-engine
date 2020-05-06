@@ -57,25 +57,50 @@ class Console(BaseApp):
         (int, string)
             returns a tuple of command execution return code and output.
         """
-        cmnd = shlex.split(cmnd)
-        p = subprocess.Popen(cmnd, shell=False, stdin=None, bufsize=-1, env=env,
-                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                             close_fds=True, cwd=cwd, preexec_fn=os.setsid)
+
+        p = self._start_subprocess(cmnd=cmnd, cwd=cwd, env=env)
 
         # Start the counter for command to finish if requested.
         if timeout > 0:
             time_limit = time.time() + timeout
 
             while time.time() < time_limit:
-                if p.poll() is None:
+                if self._is_alive(p):
                     time.sleep(1)
                 else:
                     break
-
-            # command is still active, kill it.
-            if p.poll() is None:
-                log.warning("TIMEOUT : Killing command %s" % cmnd)
-                os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+            self._kill_subprocess(p)
 
         stdout_val = p.communicate()[0]
         return p.returncode, stdout_val.strip().decode('utf-8')
+
+    def _start_subprocess(self, cmnd,
+                          stdin=None, stdout=None, stderr=None,
+                          env=None, cwd=None):
+        """
+        Starts a subprocess and returns a handle for it.
+        """
+        stdout = subprocess.PIPE if not stdout else stdout
+        stderr = subprocess.STDOUT if not stderr else stderr
+
+        cmnd = shlex.split(cmnd)
+        
+        return subprocess.Popen(cmnd, shell=False, cwd=cwd, env=env, bufsize=-1, 
+                                stdin=stdin, stdout=stdout, stderr=stderr,
+                                close_fds=True, preexec_fn=os.setsid)
+
+    def _kill_subprocess(self, proc, close_fds=False):
+        """
+        Kills a subprocess represented by handle 'proc'.
+        """
+        # command is still active, kill it.
+        log.warning("Killing subprocess %s" % proc.pid)
+        proc.kill()
+        if close_fds:
+            proc.communicate()
+
+    def _is_alive(self, proc):
+        """
+        Returns True if subprocess is still running else False
+        """
+        return proc.poll() is None
