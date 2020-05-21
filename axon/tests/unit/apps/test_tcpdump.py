@@ -9,7 +9,7 @@ Unit test for PCAP app.
 import logging
 import unittest
 
-from axon.apps.tcpdump import TCPDump
+from axon.apps.tcpdump import TCPDump, TCPDumpRerunError
 
 
 log = logging.getLogger(__name__)
@@ -34,6 +34,14 @@ class TestTCPDumpApp(unittest.TestCase):
         for dst, interface, args in _data:
             self._app.start_pcap(dst_file=dst, interface=interface,
                                  args=args)
+
+        try:
+            self._app.start_pcap('p1.pcap', 'eth0')
+        except TCPDumpRerunError as err:
+            msg = 'A tcpdump directing to p1.pcap is already running'
+            assert msg in err.args
+        except Exception as err:
+            raise err
 
         # some of these won't start as interface might not exist.
         # stop those processes.
