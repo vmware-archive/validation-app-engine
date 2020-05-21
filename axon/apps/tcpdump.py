@@ -6,8 +6,8 @@
 '''
 App for running tcpdump tool and generating .pcap files.
 '''
-import os
 import logging
+import os
 
 import axon.apps.console as console
 
@@ -15,7 +15,7 @@ import axon.apps.console as console
 log = logging.getLogger(__name__)
 
 
-class TCPDumpError(Exception):
+class TCPDumpRerunError(Exception):
     pass
 
 
@@ -44,7 +44,8 @@ class TCPDump(console.Console):
         Starts Packet Capture with 'tcpdump' command for given params.
         """
         if self._get_pcap_handle(dst_file):
-            raise TCPDumpError("A tcpdump directing to %s is already running")
+            msg = "A tcpdump directing to %s is already running" % dst_file
+            raise TCPDumpRerunError(msg)
 
         dst_file = self._get_identifier(dst_file)
         cmnd = 'tcpdump -i %s %s -w %s' % (interface, args, dst_file)
@@ -57,8 +58,9 @@ class TCPDump(console.Console):
         """
         ident = self._get_identifier(dst_file)
         proc = self._get_pcap_handle(ident)
-        self._kill_subprocess(proc)
-        self._get_pcap_handles.pop(ident)
+        if proc:
+            self._kill_subprocess(proc)
+            self._get_pcap_handles.pop(ident)
 
     def is_running(self, dst_file):
         ident = self._get_identifier(dst_file)
