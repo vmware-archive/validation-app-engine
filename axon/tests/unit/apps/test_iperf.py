@@ -12,7 +12,7 @@ import unittest
 import warnings
 
 
-from axon.apps.iperfapp import Iperf
+from axon.apps.iperf import Iperf
 
 
 log = logging.getLogger(__name__)
