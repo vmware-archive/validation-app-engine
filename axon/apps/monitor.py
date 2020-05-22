@@ -9,18 +9,17 @@
 """
 import logging
 import os
-import psutil
 import queue
 import threading
 import time
 
-from multiprocessing import Queue
+import psutil
 
 from axon.apps.base import BaseApp
 from axon.db.record import ResourceRecord
 
-
 log = logging.getLogger(__name__)
+
 
 class ResourceMonitor(BaseApp):
     def __init__(self, rqueue, interval=3, proc_name='runner'):
@@ -37,8 +36,6 @@ class ResourceMonitor(BaseApp):
     def _run(self):
         p = psutil.Process(os.getpid())
         while self._switch.is_set():
-            t = int(time.time())
-
             sys_cpu_percent = round(psutil.cpu_percent(), 2)
             sys_mem_percent = round(psutil.virtual_memory().percent, 2)
             sys_net_conns = int(len(psutil.net_connections()))
@@ -73,6 +70,7 @@ class ResourceMonitor(BaseApp):
         if self.is_running():
             self._thread.join()
             self._thread = None
+        log.info("Stopped resource monitoring.")
 
     def start(self):
         """
@@ -83,3 +81,4 @@ class ResourceMonitor(BaseApp):
             self._thread = threading.Thread(target=self._run)
             self._thread.setDaemon(True)
             self._thread.start()
+        log.info("Started resource monitoring.")
