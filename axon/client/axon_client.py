@@ -118,13 +118,25 @@ class InterfaceManager(Manager):
 class ResourceMonitorManager(Manager):
 
     def start(self):
-        self._client.resource_monitor.start()
+        self._client.monitor.start()
 
     def stop(self):
-        self._client.resource_monitor.stop()
+        self._client.monitor.stop()
 
     def is_running(self):
-        self._client.resource_monitor.is_running()
+        return self._client.monitor.is_running()
+
+
+class TCPDumpManager(Manager):
+
+    def start_pcap(self, dst_file, interface='eth0', args=''):
+        self._client.tcpdump.start_pcap(dst_file, interface, args)
+
+    def stop_pcap(self, dst_file):
+        self._client.tcpdump.stop_pcap(dst_file)
+
+    def is_running(self, dst_file):
+        return self._client.tcpdump.is_running(dst_file)
 
 
 class AxonClient(object):
@@ -132,7 +144,7 @@ class AxonClient(object):
     Top level object to access Axon API
     """
 
-    def __init__(self, axon_host, axon_port=5678, 
+    def __init__(self, axon_host, axon_port=5678,
                  proxy_host=None, request_timeout=180,
                  retry_count=5, sleep_interval=.5):
         """ Initialization of Client object
@@ -159,13 +171,14 @@ class AxonClient(object):
         self.namespace = NamespaceManager(self.rpc_client.root)
         self.interface = InterfaceManager(self.rpc_client.root)
         self.monitor = ResourceMonitorManager(self.rpc_client.root)
+        self.pcap = TCPDumpManager(self.rpc_client.root)
 
     def _connect(self, retry_count, sleep_interval, request_timeout):
 
         # Client will wait for request_timeout seconds in case
         # server takes long time to response, default timeout
         # is 30 seconds which is small for few Axon APIs
-        conf={"sync_request_timeout": request_timeout}
+        conf = {"sync_request_timeout": request_timeout}
         failure_count = 0
         last_exception = None
         while failure_count < retry_count:
@@ -191,7 +204,7 @@ class AxonClient(object):
             except Exception:
                 raise
 
-        if  self.rpc_client is None:
+        if self.rpc_client is None:
             raise last_exception
 
     def __enter__(self):
