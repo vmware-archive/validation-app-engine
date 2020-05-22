@@ -22,6 +22,7 @@ class TCPDumpRerunError(Exception):
 class TCPDump(console.Console):
 
     def __init__(self):
+        super(TCPDump, self).__init__()
         self._pcap_handles = {}  # a <str: subprocess.Popen> pair
 
     def _get_identifier(self, dst_file):
@@ -45,12 +46,15 @@ class TCPDump(console.Console):
         """
         if self._get_pcap_handle(dst_file):
             msg = "A tcpdump directing to %s is already running" % dst_file
+            log.error(msg)
             raise TCPDumpRerunError(msg)
 
-        dst_file = self._get_identifier(dst_file)
-        cmnd = 'tcpdump -i %s %s -w %s' % (interface, args, dst_file)
+        _dst_file = self._get_identifier(dst_file)
+        cmnd = 'tcpdump -i %s %s -w %s' % (interface, args, _dst_file)
         p = self._start_subprocess(cmnd)
-        self._pcap_handles[dst_file] = p
+        self._pcap_handles[_dst_file] = p
+        log.info("Started Packet capture for %s at %s", dst_file, _dst_file)
+        return True
 
     def stop_pcap(self, dst_file):
         """
@@ -60,7 +64,14 @@ class TCPDump(console.Console):
         proc = self._get_pcap_handle(ident)
         if proc:
             self._kill_subprocess(proc)
-            self._get_pcap_handles.pop(ident)
+            self._pcap_handles.pop(ident)
+            msg = ("Stopped Packet capture for %s. Result is available"
+                   " at %s." % (dst_file, ident))
+            log.info(msg)
+        else:
+            msg = ("No PCAP handle found for %s" % dst_file)
+            log.warn(msg)
+        return msg
 
     def is_running(self, dst_file):
         ident = self._get_identifier(dst_file)
