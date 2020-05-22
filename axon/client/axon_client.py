@@ -115,6 +115,18 @@ class InterfaceManager(Manager):
         return self._client.interface.get_interface(name)
 
 
+class ResourceMonitorManager(Manager):
+
+    def start(self):
+        self._client.resource_monitor.start()
+
+    def stop(self):
+        self._client.resource_monitor.stop()
+
+    def is_running(self):
+        self._client.resource_monitor.is_running()
+
+
 class AxonClient(object):
     """
     Top level object to access Axon API
@@ -146,6 +158,7 @@ class AxonClient(object):
         self.stats = StatsManager(self.rpc_client.root)
         self.namespace = NamespaceManager(self.rpc_client.root)
         self.interface = InterfaceManager(self.rpc_client.root)
+        self.monitor = ResourceMonitorManager(self.rpc_client.root)
 
     def _connect(self, retry_count, sleep_interval, request_timeout):
 
