@@ -11,7 +11,8 @@ import socket
 from axon.common import utils
 
 LINUX_OS = "Linux" in platform.uname()
-utils.setup_logging()
+LOG_FILE = os.environ.get('LOG_FILE', "axon.log")
+utils.setup_logging(log_file=LOG_FILE)
 
 
 # Traffic Server Configs
@@ -23,6 +24,7 @@ ALLOW_REUSE_ADDRESS = True
 # Env Configs
 TEST_ID = os.environ.get('TEST_ID', None)
 TESTBED_NAME = os.environ.get('TESTBED_NAME', None)
+AXON_PORT = int(os.environ.get('AXON_PORT', 5678))
 
 
 # Wavefront recorder configs

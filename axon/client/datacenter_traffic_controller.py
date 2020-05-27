@@ -23,7 +23,8 @@ def register_traffic(register_param):
     workload_server = register_param[0]
     rule_list = register_param[1]
     proxy_host = register_param[2]
-    with AxonClient(workload_server, proxy_host=proxy_host, retry_count=30,
+    server_port = register_param[3]
+    with AxonClient(workload_server, proxy_host=proxy_host, axon_port=server_port, retry_count=30,
                      sleep_interval=1) as client:
         client.traffic.register_traffic(rule_list)
 
@@ -31,7 +32,8 @@ def register_traffic(register_param):
 def start_servers(start_param):
     server = start_param[0]
     proxy_host = start_param[1]
-    with AxonClient(server, proxy_host=proxy_host, retry_count=30,
+    server_port = start_param[2]
+    with AxonClient(server, proxy_host=proxy_host, axon_port=server_port, retry_count=30,
                     sleep_interval=1) as client:
         client.traffic.start_servers()
 
@@ -39,7 +41,8 @@ def start_servers(start_param):
 def start_clients(start_param):
     server = start_param[0]
     proxy_host = start_param[1]
-    with AxonClient(server, proxy_host=proxy_host, retry_count=30,
+    server_port = start_param[2]
+    with AxonClient(server, proxy_host=proxy_host, axon_port=server_port, retry_count=30,
                     sleep_interval=1) as client:
         client.traffic.start_clients()
 
@@ -47,7 +50,8 @@ def start_clients(start_param):
 def stop_servers(stop_param):
     server = stop_param[0]
     proxy_host = stop_param[1]
-    with AxonClient(server, proxy_host=proxy_host, retry_count=30,
+    server_port = stop_param[2]
+    with AxonClient(server, proxy_host=proxy_host, axon_port=server_port, retry_count=30,
                     sleep_interval=1) as client:
         client.traffic.stop_servers()
 
@@ -55,7 +59,8 @@ def stop_servers(stop_param):
 def stop_clients(stop_param):
     server = stop_param[0]
     proxy_host = stop_param[1]
-    with AxonClient(server, proxy_host=proxy_host, retry_count=30,
+    server_port = stop_param[2]
+    with AxonClient(server, proxy_host=proxy_host, axon_port=server_port, retry_count=30,
                     sleep_interval=1) as client:
         client.traffic.stop_clients()
 
@@ -63,7 +68,8 @@ def stop_clients(stop_param):
 def clear_traffic_rules(delete_param):
     server = delete_param[0]
     proxy_host = delete_param[1]
-    with AxonClient(server, proxy_host=proxy_host, retry_count=30,
+    server_port = delete_param[2]
+    with AxonClient(server, proxy_host=proxy_host, axon_port=server_port, retry_count=30,
                     sleep_interval=1) as client:
         client.traffic.delete_traffic_rules()
 
@@ -121,8 +127,9 @@ class DataCenterTrafficController(TrafficController):
     """
     This TrafficController deals with On-prem traffic
     """
-    def __init__(self, gateway_host=None):
+    def __init__(self, gateway_host=None, axon_server_port=5678):
         super(DataCenterTrafficController, self).__init__()
+        self._axon_server_port = axon_server_port
         self._gw_host = gateway_host
         self._workload_servers = defaultdict(list)
         self.__map_obj = WorkloadVifsMap()
@@ -155,7 +162,7 @@ class DataCenterTrafficController(TrafficController):
             workload = workload if workload else vif
             self._workload_servers[str(workload)].append(rule.as_dict())
         pool = ThreadPool(THREADPOOL_SIZE)
-        params = [(workload_server, rule_list, self._gw_host) for
+        params = [(workload_server, rule_list, self._gw_host, self._axon_server_port) for
                   workload_server, rule_list in
                   list(self._workload_servers.items())]
         pool.map(register_traffic, params)
@@ -170,7 +177,7 @@ class DataCenterTrafficController(TrafficController):
         if not servers:
             return
         pool = ThreadPool(THREADPOOL_SIZE)
-        params = [(server, self._gw_host) for server in servers]
+        params = [(server, self._gw_host, self._axon_server_port) for server in servers]
         pool.map(stop_clients, params)
         pool.close()
         pool.join()
@@ -180,7 +187,7 @@ class DataCenterTrafficController(TrafficController):
         if not servers:
             return
         pool = ThreadPool(THREADPOOL_SIZE)
-        params = [(server, self._gw_host) for server in servers]
+        params = [(server, self._gw_host, self._axon_server_port) for server in servers]
         pool.map(stop_servers, params)
         pool.close()
         pool.join()
@@ -190,7 +197,7 @@ class DataCenterTrafficController(TrafficController):
         if not servers:
             return
         pool = ThreadPool(THREADPOOL_SIZE)
-        params = [(server, self._gw_host) for server in servers]
+        params = [(server, self._gw_host, self._axon_server_port) for server in servers]
         pool.map(start_servers, params)
         pool.close()
         pool.join()
@@ -200,7 +207,7 @@ class DataCenterTrafficController(TrafficController):
         if not servers:
             return
         pool = ThreadPool(THREADPOOL_SIZE)
-        params = [(server, self._gw_host) for server in servers]
+        params = [(server, self._gw_host, self._axon_server_port) for server in servers]
         pool.map(start_clients, params)
         pool.close()
         pool.join()
@@ -210,7 +217,7 @@ class DataCenterTrafficController(TrafficController):
         if not servers:
             return
         pool = ThreadPool(THREADPOOL_SIZE)
-        params = [(server, self._gw_host) for server in servers]
+        params = [(server, self._gw_host, self._axon_server_port) for server in servers]
         pool.map(clear_traffic_rules, params)
         pool.close()
         pool.join()

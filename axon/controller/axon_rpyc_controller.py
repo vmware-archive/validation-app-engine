@@ -105,7 +105,7 @@ class AxonService(AxonServiceBase):
 class AxonController(object):
 
     def __init__(self):
-        self.axon_port = consts.AXON_PORT
+        self.axon_port = conf.AXON_PORT
         self.service = AxonService()
         self.protocol_config = self.service.RPYC_PROTOCOL_CONFIG
         self.logger = logging.getLogger(__name__)
