@@ -139,6 +139,36 @@ class TCPDumpManager(Manager):
         return self._client.tcpdump.is_running(dst_file)
 
 
+class IperfManager(Manager):
+
+    def start_iperf_server(self, port=None, args=''):
+        return self._client.iperf.start_iperf_server(port, args)
+
+    def stop_iperf_server(self, port):
+        self._client.iperf.stop_iperf_server(port)
+
+    def start_iperf_client(self, dst_ip, dst_port, duration=10,
+                           udp=False, bandwidth=None, args=''):
+        return self._client.iperf.start_iperf_client(dst_ip, dst_port,
+                                                     duration, udp,
+                                                     bandwidth, args)
+
+    def stop_iperf_client(self, job_id):
+        self._client.iperf.stop_iperf_client(job_id)
+
+    def get_server_ports(self):
+        return self._client.iperf.get_server_ports()
+
+    def get_client_jobs(self):
+        return self._client.iperf.get_client_jobs()
+
+    def get_client_job_info(self, job_id):
+        return self._client.iperf.get_client_job_info(job_id)
+
+    def is_running(self, port):
+        return self._client.iperf.is_running(port)
+
+
 class AxonClient(object):
     """
     Top level object to access Axon API
@@ -172,6 +202,7 @@ class AxonClient(object):
         self.interface = InterfaceManager(self.rpc_client.root)
         self.monitor = ResourceMonitorManager(self.rpc_client.root)
         self.pcap = TCPDumpManager(self.rpc_client.root)
+        self.iperf = IperfManager(self.rpc_client.root)
 
     def _connect(self, retry_count, sleep_interval, request_timeout):
 
