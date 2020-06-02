@@ -14,6 +14,7 @@ from rpyc.utils.server import ThreadPoolServer
 from axon.common import config as conf
 
 from axon.apps.interface import InterfaceApp
+from axon.apps.iperf import Iperf
 from axon.apps.monitor import ResourceMonitor
 from axon.apps.namespace import NamespaceApp
 from axon.apps.stats import StatsApp
@@ -64,6 +65,11 @@ class exposed_TCPDump(TCPDump):
     pass
 
 
+@exposify
+class exposed_Iperf(Iperf):
+    pass
+
+
 class AxonServiceBase(rpyc.Service):
 
     RPYC_PROTOCOL_CONFIG = rpyc.core.protocol.DEFAULT_CONFIG
@@ -93,6 +99,7 @@ class AxonService(AxonServiceBase):
         self.exposed_interface = exposed_Interface()
         self.exposed_monitor = exposed_ResourceMonitor(self._record_queue)
         self.exposed_tcpdump = exposed_TCPDump()
+        self.exposed_iperf = exposed_Iperf()
 
 
 class AxonController(object):
