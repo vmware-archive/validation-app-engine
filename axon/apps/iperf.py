@@ -18,9 +18,12 @@ log = logging.getLogger(__name__)
 class Iperf(console.Console):
 
     IPERF_BIN = 'iperf3'
+    _START_RAND_PORT = 5600
+    _END_RAND_PORT = 6000
     _STARTING_JOB_ID = 1000
 
     def __init__(self):
+        super(Iperf, self).__init__()
         # {<port>: <popen obj>}
         self._server_handles = {}
 
@@ -31,6 +34,8 @@ class Iperf(console.Console):
         #             }
         self._client_handles = {}
         self._job_id = None
+        self._gen_rand_port = self._gen_rand_port(self._START_RAND_PORT,
+                                                  self._END_RAND_PORT)
 
     def start_iperf_server(self, port=None, args=''):
         """
@@ -43,10 +48,7 @@ class Iperf(console.Console):
         port: (int) TCP port number being used for iperf server
         """
         if not port:
-            for _ in range(10):
-                port = random.randint(10000, 60000)
-                if port not in self._server_handles:
-                    break
+            port = next(self._gen_rand_port)
         if self.is_running(port):
             log.info("Server is already running on port: %d"
                      "Skip starting server." % port)
@@ -63,9 +65,22 @@ class Iperf(console.Console):
                 break
             time.sleep(1)
         else:
-            raise RuntimeError("unable to start iperf3 server. \
-                check port:%d is available." % port)
+            msg = "unable to start iperf3 server. check port:%d is available." % port
+            log.error(msg)
+            raise RuntimeError(msg)
         return port
+
+    def _gen_rand_port(self, start_port, end_port):
+
+        for _ in range(start_port, end_port + 1):
+            port = random.randint(start_port, end_port)
+            if port not in self._server_handles:
+                yield port
+        else:
+            msg = "Running out of random port between starting port: %d - "\
+                             "ending port: %d" % (start_port, end_port)
+            log.error(msg)
+            raise ValueError(msg)
 
     def get_server_ports(self):
         """
@@ -83,6 +98,15 @@ class Iperf(console.Console):
         if proc:
             self._kill_subprocess(proc)
             self._server_handles.pop(port)
+
+    def stop_iperf_client(self, job_id):
+        """
+        Stop iperf client for given job_id.
+        """
+        job = self._client_handles.get(job_id)
+        if job:
+            self._kill_subprocess(job.get('popen_obj'))
+            self._client_handles.pop(job_id)
 
     def start_iperf_client(self, dst_ip, dst_port, duration=10, udp=False,
                            bandwidth=None, args=''):
