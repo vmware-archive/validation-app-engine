@@ -68,18 +68,23 @@ class AxonRemoteOperation(object):
         """
         Run given command on remote machine
         :param remote_cmd: remote commmand to run
-        :return: Operation success
+        :return: stdout(str) returned by the command or
+                 list of stdout(list) returned by the commands
+                 if commands are in a list
         """
         with self.remote_connection() as conn:
             if isinstance(remote_cmd, str):
                 self.log.info("Running remote command - %s" % remote_cmd)
-                conn.run(remote_cmd)
+                result = conn.run(remote_cmd)
+                return result.stdout.strip()
                 self.log.info("Remote command successful - %s" % remote_cmd)
             elif isinstance(remote_cmd, list):
+                results = []
                 for cmd in remote_cmd:
                     self.log.info("Running remote command - %s" % cmd)
-                    conn.run(remote_cmd)
+                    results.append(conn.run(cmd).stdout.strip())
                     self.log.info("Remote command successful - %s" % cmd)
+                return results
 
     def remote_put_file(self, source, dest=None):
         """
@@ -131,17 +136,21 @@ class AxonRemoteOperation(object):
 
 
 class AxonRemoteOperationWindows(AxonRemoteOperation):
+
+    SC = 'sc'
+    WIN_SERVICE = 'AxonWinService'
+    AXON_WIN_SVC_PATH = r'axon\controller\windows\axon_service.py'
+
     """
     Assumption -
-        - axon is pip based implementation so that axon_service.exe will
-          present in python scripts path.
         - pypi server is running on specified host and port.
         - pypi package is present on pypi packages directory.
         - ssh server is running on remote windows machine on default port 22
 
     This class implements remote operations for windows -
     Remote operations implemented are -
-        - upload exe file from local to remote
+        - upload sdist file from local to remote
+        - install pip package from pypi server
         - Register axon as a service in windows remotely.
         - Starts axon service remotely.
         - Stops axon service remotely.
@@ -149,26 +158,28 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
 
     Important -
         To use this there will always be two methods -
-            1. Install vmware-axon pip package and then perform
+            1. Install validation-app-engine pip package and then perform
                Register/Start/Stop/Unregister operations
 
                i.e -
 
-               $ axn = AxonRemoteOperationWindows((**params)
-               $ axn.remote_install_pypi('vmware-axon')
+               $ axn = AxonRemoteOperationWindows(**params)
+               $ axn.remote_install_pypi('validation-app-engine')
                $ axn.remote_register_axon()
+               $ axn.remote_start_axon()
                $ ... and so on
 
-            2. Upload exe from local machine to remote machine's python
+            2. Upload sdist from local machine to remote machine's python
                scripts path, and then perform Register/Start/Stop/Unregister
                operations
 
                i.e -
 
-               $ axn = AxonRemoteOperationWindows((**params)
-               Assume axon_service.exe is put in /tmp/ in local machine
-               $ axn.remote_install_exe('/tmp/axon_service.exe')
+               $ axn = AxonRemoteOperationWindows(**params)
+               Assume sdist_package is put in /tmp/ in local machine
+               $ axn.remote_install_sdist('/tmp/validation-app-engine-0.3.5.dev43.tar.gz ')
                $ axn.remote_register_axon()
+               $ axn.remote_start_axon()
                $ ... and so on
 
         At a time only one of above procedure needs to be followed.
@@ -176,14 +187,13 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
     """
     def remote_install_sdist(self, sdist_package_path):
         """
-        Remotely upload previously created axon_service.exe from local host
+        Remotely upload previously created sdist_package from local host
         to remote host.
         :param sdist_package_path: python sdist tar.gz package
 
              This is created using -
                # python setup.py sdist
              This will create a tar.gz file in axon/dist/ directory
-             wit same something like vmware-axon*
         :return: None
         """
         if not os.path.exists(sdist_package_path):
@@ -209,8 +219,8 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
 
     def remote_install_requirements(self, requirement_file):
         """
-        Remotely uninstall given pypi packages from a requirement file
-        :param pypi package name i.e. 'vmware-axon'
+        Remotely install given requirement file
+        :param requirement_file
         :return: Operation success
         """
         if not os.path.exists(requirement_file):
@@ -241,52 +251,77 @@ class AxonRemoteOperationWindows(AxonRemoteOperation):
             conn.run(install_cmd)
             self.log.info('Installation successful !!')
 
-    def remote_register_axon(self, axon_exe='axon_service.exe'):
+    def remote_register_axon(self):
         """
         Remotely register axon as a service
         :return: Operation success
         """
-        register_cmd = "%s --startup auto install" % axon_exe
+        python_bin = r'%s' % self.remote_run_command('where python')
+        axon_install_path = r'%s' % self.remote_run_command('pip show validation-app-engine | findstr Location')
+        axon_root = r'%s' % axon_install_path.split('Location:')[1]
+        axon_service_path = os.path.join(axon_root, self.AXON_WIN_SVC_PATH)
+        register_cmd = '%s create %s binpath= "%s %s" DisplayName= "%s" start= auto' % (
+            self.SC, self.WIN_SERVICE, python_bin, axon_service_path, self.WIN_SERVICE)
         self.log.info("Registering axon service.")
         self.remote_run_command(register_cmd)
 
-    def remote_start_axon(self, axon_exe='axon_service.exe'):
+    def remote_start_axon(self):
         """
         Remotely start axon service
         :return: Operation success
         """
-        start_cmd = "%s start" % axon_exe
+        start_cmd = "%s start %s" % (self.SC, self.WIN_SERVICE)
         with self.remote_connection() as conn:
             conn.run('if not exist "C:\\axon" mkdir C:\\axon')
             self.log.info("starting axon service.")
             conn.run(start_cmd)
 
-    def remote_stop_axon(self, axon_exe='axon_service.exe'):
+    def remote_stop_axon(self):
         """
         Remotely stop axon service
         :return: Operation success
         """
-        stop_cmd = "%s stop" % axon_exe
+        stop_cmd = "%s stop %s" % (self.SC, self.WIN_SERVICE)
         self.log.info("stoping axon service.")
         self.remote_run_command(stop_cmd)
 
-    def remote_restart_axon(self, axon_exe='axon_service.exe'):
+    def remote_restart_axon(self):
         """
         Remotely restart axon service
         :return: Operation success
         """
-        restart_cmd = "%s restart" % axon_exe
         self.log.info("Restarting axon service.")
-        self.remote_run_command(restart_cmd)
+        if self.remote_is_running_axon():
+            self.remote_stop_axon()
+        self.remote_start_axon()
 
-    def remote_unregister_axon(self, axon_exe='axon_service.exe'):
+    def remote_unregister_axon(self):
         """
         Remotely unregister axon service
         :return: Operation success
         """
-        remove_cmd = "%s remove" % axon_exe
+        if self.remote_is_running_axon():
+            self.remote_stop_axon()
+        remove_cmd = "%s delete %s" % (self.SC, self.WIN_SERVICE)
         self.log.info("Unregistering axon service.")
         self.remote_run_command(remove_cmd)
+
+    def remote_status_axon(self):
+        """
+        Remotely status axon service.
+        :return: output returned by windows sc query command
+        """
+        status_cmd = "%s query %s" % (self.SC, self.WIN_SERVICE)
+        self.log.info("Get axon service status.")
+        return self.remote_run_command(status_cmd)
+
+    def remote_is_running_axon(self):
+        """
+        Check whether axon service is running.
+        :return: True if running else False
+        """
+        status = self.remote_status_axon()
+        return "RUNNING" in status
 
 
 class AxonRemoteOperationLinux(AxonRemoteOperation):
@@ -300,7 +335,7 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
     """
     def remote_install_sdist(self, sdist_package_path):
         """
-        Remotely upload previously created axon_service.exe from local host
+        Remotely upload previously created sdist_package from local host
         to remote host.
         :param sdist_package_path: python sdist tar.gz package
         :return: None
@@ -326,8 +361,9 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
 
     def remote_install_requirements(self, requirement_file, dest="/tmp"):
         """
-        Remotely uninstall given pypi packages from a requirement file
-        :param pypi package name i.e. 'vmware-axon'
+        Remotely install given requirement file
+        :param requirement_file'
+        :param dest path
         :return: Operation success
         """
         if not os.path.exists(requirement_file):
@@ -428,11 +464,19 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
     def remote_status_axon(self):
         """
         Remotely status axon service.
-        :return: None
+        :return: output returned by systemctl status
         """
         status_cmd = "sudo systemctl status axon"
         self.log.info("Get axon service status.")
-        self.remote_run_command(status_cmd)
+        return self.remote_run_command(status_cmd)
+
+    def remote_is_running_axon(self):
+        """
+        Check whether axon service is running.
+        :return: True if running else False
+        """
+        status = self.remote_status_axon()
+        return "active" in status
 
 
 if __name__ == "__main__":
@@ -457,9 +501,8 @@ if __name__ == "__main__":
     axn_linux.remote_install_distribution(debian_file)
 
     # Axon on windows Steps.
-    # 1. install using sdist distribution package
-    tarball_file = '/var/lib/automation/packages/axon_service.tar.gz'
-    # axn_win.remote_install_sdist(tarball_file)
+    # 1. install from pypi
+    axn_win.remote_install_pypi('validation-app-engine')
     # 2. register service in service manager
     axn_win.remote_register_axon()
     # 3. start service
