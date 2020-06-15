@@ -17,6 +17,7 @@ from axon.apps.interface import InterfaceApp
 from axon.apps.iperf import Iperf
 from axon.apps.monitor import ResourceMonitor
 from axon.apps.namespace import NamespaceApp
+from axon.apps.scapy import Scapy
 from axon.apps.stats import StatsApp
 from axon.apps.tcpdump import TCPDump
 from axon.apps.traffic import TrafficApp
@@ -70,6 +71,11 @@ class exposed_Iperf(Iperf):
     pass
 
 
+@exposify
+class exposed_Scapy(Scapy):
+    pass
+
+
 class AxonServiceBase(rpyc.Service):
 
     RPYC_PROTOCOL_CONFIG = rpyc.core.protocol.DEFAULT_CONFIG
@@ -100,6 +106,7 @@ class AxonService(AxonServiceBase):
         self.exposed_monitor = exposed_ResourceMonitor(self._record_queue)
         self.exposed_tcpdump = exposed_TCPDump()
         self.exposed_iperf = exposed_Iperf()
+        self.exposed_scapy= exposed_Scapy()
 
 
 class AxonController(object):
