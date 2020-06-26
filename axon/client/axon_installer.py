@@ -36,7 +36,7 @@ class AxonRemoteOperation(object):
         self._gw_user = gw_user
         self.pypi_server = pypi_server
         self.pypi_server_port = pypi_server_port
-        self.pip_map = {'posix': 'pip', 'nt': 'pip.exe'}
+        self.pip_map = {'posix': 'pip3', 'nt': 'pip.exe'}
         self.connect_kwargs_remote = {}
         self.connect_kwargs_gateway = {}
         if remote_password:
@@ -354,7 +354,7 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
             self.log.info("copy file to remote machine.")
             conn.put(sdist_package_path, '/tmp')
             self.log.info("Copy successful")
-            install_cmd = 'sudo -H pip install /tmp/' + filename
+            install_cmd = 'sudo -H pip3 install /tmp/' + filename
             self.log.info("Install sdist package to remote machine.")
             conn.run(install_cmd)
             self.log.info("Installation successful.")
@@ -373,14 +373,14 @@ class AxonRemoteOperationLinux(AxonRemoteOperation):
             # Prerequirements
             conn.run('sudo apt-get install python-setuptools -y --force-yes')
             conn.run('sudo apt-get install python-pip -y')
-            conn.run('sudo -H pip install --upgrade pip setuptools')
+            conn.run('sudo -H pip3 install --upgrade pip setuptools')
 
             filename = os.path.basename(requirement_file)
             self.log.info("copy requirements file to remote machine.")
             conn.put(requirement_file, dest)
             self.log.info("Copy successful")
             dest_file = dest + "/" + filename
-            install_cmd = "sudo -H pip install -r %s" % dest_file
+            install_cmd = "sudo -H pip3 install -r %s" % dest_file
             if self.pypi_server and self.pypi_server_port:
                 install_cmd = (install_cmd + " --trusted-host %s "
                                "--extra-index-url http://%s:%s" % (

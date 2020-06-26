@@ -3,7 +3,7 @@
 # The full license information can be found in LICENSE.txt
 # in the root directory of this project.
 
-FROM python:2.7
+FROM python:3.6
 
 # upgrade the setuptools, required for nsenenter
 RUN pip install setuptools --upgrade
@@ -21,7 +21,7 @@ RUN python setup.py install
 EXPOSE 5678
 
 # RUN the service
-CMD python -m axon.controller.axon_rpyc_controller 
+CMD python -m axon.controller.axon_rpyc_controller
 
 
 
