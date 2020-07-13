@@ -91,6 +91,14 @@ class Console(BaseApp):
                                 close_fds=True, preexec_fn=os.setsid,
                                 bufsize=-1)
 
+    def _ctrl_c(self, proc, timeout=1):
+        """
+        """
+        proc.send_signal(signal.SIGINT)
+        # For child processes, you need to wait for some time after sending
+        # SIGINT signal : https://bugs.python.org/issue25942
+        proc.wait(timeout)
+
     def _kill_subprocess(self, proc, close_fds=False):
         """
         Kills a subprocess represented by handle 'proc'.
