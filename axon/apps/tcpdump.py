@@ -63,6 +63,7 @@ class TCPDump(console.Console):
         ident = self._get_identifier(dst_file)
         proc = self._get_pcap_handle(ident)
         if proc:
+            self._ctrl_c(proc)
             self._kill_subprocess(proc)
             self._pcap_handles.pop(ident)
             msg = ("Stopped Packet capture for %s. Result is available"
