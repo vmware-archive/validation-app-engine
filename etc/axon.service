@@ -6,12 +6,12 @@
 # axon - Axon daemon
 #
 [Unit]
-Description=Axon Traffic Generaion Service Daemon
+Description=Axon Traffic Generation Service Daemon
 
 [Service]
 Type=idle
 Environment="PYTHONPATH=$PYTHONPATH:/opt/"
-ExecStart=/usr/bin/python -maxon.controller.axon_rpyc_controller
+ExecStart=/usr/bin/python3 -maxon.controller.axon_rpyc_controller
 StandardOutput=journal+console
 EnvironmentFile=/etc/axon/axon.conf
 

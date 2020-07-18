@@ -105,7 +105,7 @@ For working setup, we need to have a **rpyc_proxy** service to be ruuning on jum
 
 #. Install rpyc python package on jump host::
 
-    $ pip install rpyc
+    $ pip3 install rpyc
 
 #. Run below command to make some some required changes::
 
