@@ -6,7 +6,6 @@
 
 set -x
 echo "Pre-Install Steps"
-sudo pip install requests
 echo "Stopping the Axon"
 sudo systemctl stop axon
 echo "Removing axon directory"
