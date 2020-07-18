@@ -169,6 +169,18 @@ class IperfManager(Manager):
         return self._client.iperf.is_running(port)
 
 
+class ScapyManager(Manager):
+
+    def run(self, code):
+        return self._client.scapy.execute(code)
+
+    def get_console(self, params):
+        return self._client.scapy.get_console(params)
+
+    def close_session(self, session_id=None):
+        self._client.scapy.close_session()
+
+
 class AxonClient(object):
     """
     Top level object to access Axon API
@@ -203,6 +215,7 @@ class AxonClient(object):
         self.monitor = ResourceMonitorManager(self.rpc_client.root)
         self.pcap = TCPDumpManager(self.rpc_client.root)
         self.iperf = IperfManager(self.rpc_client.root)
+        self.scapy = ScapyManager(self.rpc_client.root)
 
     def _connect(self, retry_count, sleep_interval, request_timeout):
 

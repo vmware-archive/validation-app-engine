@@ -20,7 +20,8 @@ if os.name == "posix":
 else:
    VALIDATION_CONFIG_DB_URL = "sqlite:///C:\\axon\\config.db"
 
-
+VALIDATION_CONFIG_DB_URL = os.getenv('VALIDATION_CONFIG_DB_URL',
+                                     VALIDATION_CONFIG_DB_URL)
 
 cs_db_session = scoped_session(sessionmaker(
     autoflush=True,

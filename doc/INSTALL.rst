@@ -65,7 +65,7 @@ Local Installation (Ubuntu)
 #. Copy axon_requirements.txt and debian package to Ubuntu machine where you want to install this.
 #. Now on Ubuntu machine, first install axon_requirements.txt using pip command and then install debian package::
 
-    $ pip install axon_requirements.txt
+    $ pip3 install -r axon_requirements.txt
     $ dpkg -i axon_service.deb
 
 #. Check for installation in /opt directory in remote windows machine::
