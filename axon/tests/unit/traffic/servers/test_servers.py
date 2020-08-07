@@ -6,11 +6,12 @@
 
 import mock
 import os
+import socket
 import subprocess
 
 from axon.tests import base as test_base
-from axon.traffic.servers.servers import ThreadedTCPServer, \
-    ThreadedUDPServer, TCPRequestHandler, UDPRequestHandler, \
+from axon.traffic.servers.servers import ThreadedTCPServer, ThreadedTCPServerV6, \
+    ThreadedUDPServer, ThreadedUDPServerV6, TCPRequestHandler, UDPRequestHandler, \
     IperfServer, create_server_class
 
 
@@ -109,6 +110,26 @@ class TestThreadedTCPServer(test_base.BaseTestCase):
         server_class, args, kwargs = create_server_class(
             protocol, port, source)
         self.assertEqual(server_class, ThreadedUDPServer)
+
+    def test_create_tcp_V6_server_class(self):
+        protocol = 'TCP'
+        port = 12345
+        source = '::4'
+        server_class, args, kwargs = create_server_class(
+            protocol, port, source)
+        self.assertEqual(server_class, ThreadedTCPServerV6)
+        self.assertEqual(server_class.address_family,
+                         socket.AF_INET6)
+
+    def test_create_udp_V6_server_class(self):
+        protocol = 'UDP'
+        port = 12345
+        source = '::4'
+        server_class, args, kwargs = create_server_class(
+            protocol, port, source)
+        self.assertEqual(server_class, ThreadedUDPServerV6)
+        self.assertEqual(server_class.address_family,
+                         socket.AF_INET6)
 
     def test_create_iperf_tcp_server_class(self):
         server_type = 'iperf'

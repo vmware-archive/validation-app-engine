@@ -5,9 +5,11 @@
 # in the root directory of this project.
 
 import abc
+import ipaddress
 import os
 import signal
 import six
+import socket
 from six.moves import socketserver
 import subprocess
 from six.moves.BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
@@ -146,6 +148,14 @@ class ThreadedUDPServer(socketserver.ThreadingMixIn,
         pass
 
 
+class ThreadedTCPServerV6(ThreadedTCPServer):
+    address_family = socket.AF_INET6
+
+
+class ThreadedUDPServerV6(ThreadedUDPServer):
+    address_family = socket.AF_INET6
+
+
 class IperfServer(Server):
     """
     Class to manage Iperf Server
@@ -187,11 +197,15 @@ def create_server_class(protocol, port, source, server_type='socket'):
     :rtype: Server
     """
     if protocol == "TCP" and server_type == "socket":
-        server_class = ThreadedTCPServer
+        server_class = ThreadedTCPServerV6 \
+            if ipaddress.ip_address(source).version == 6 \
+            else ThreadedTCPServer
         args = ((source, int(port)), TCPRequestHandler)
         kwargs = {}
     elif protocol == "UDP" and server_type == "socket":
-        server_class = ThreadedUDPServer
+        server_class = ThreadedUDPServerV6 \
+            if ipaddress.ip_address(source).version == 6 \
+            else ThreadedUDPServer
         args = ((source, int(port)), UDPRequestHandler)
         kwargs = {}
     elif server_type == "iperf":
