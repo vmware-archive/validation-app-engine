@@ -6,6 +6,7 @@
 
 import abc
 import datetime
+import ipaddress
 import itertools
 import logging
 import six
@@ -44,7 +45,7 @@ class Client(object):
 
 class TCPClient(Client):
     def __init__(self, source, destination, port, record_queue,
-                 connected=True, action=1, request_count=1):
+                 connected=True, action=1, request_count=1, ipv6=False):
         """
         Client to send TCP requests
         :param source: source ip
@@ -70,6 +71,7 @@ class TCPClient(Client):
         self._connected = connected
         self._action = action
         self.log = logging.getLogger(__name__)
+        self._ipv6 = ipv6
 
     def _create_socket(self, address_family=socket.AF_INET,
                        socket_type=socket.SOCK_STREAM):
@@ -82,6 +84,8 @@ class TCPClient(Client):
         :return: created socket
         :rtype: socket object
         """
+        if self._ipv6:
+            address_family = socket.AF_INET6
         sock = socket.socket(address_family, socket_type)
         sock.settimeout(5)
         return sock
@@ -177,7 +181,8 @@ class UDPClient(TCPClient):
         for _ in range(self._request_count):
             try:
                 self._start_time = datetime.datetime.now()
-                sock = self._create_socket(socket.AF_INET, socket.SOCK_DGRAM)
+                address_family = socket.AF_INET6 if self._ipv6 else socket.AF_INET
+                sock = self._create_socket(address_family, socket.SOCK_DGRAM)
                 self._send_receive(sock, payload)
                 self.record()
             except Exception as e:
@@ -285,7 +290,7 @@ class HTTPClient(TCPClient):
 
 class TrafficClient(object):
 
-    def __init__(self, src, destinations, record_queue, request_rate=100):
+    def __init__(self, src, destinations, record_queue, request_rate=100, ipv6=False):
         self._src = src
         self._request_rate = min(request_rate, len(destinations))
         self._destinations = itertools.cycle(destinations)
@@ -297,18 +302,22 @@ class TrafficClient(object):
         for _ in range(self._request_rate):
             protocol, port, endpoint, connected, action = \
                 next(self._destinations)
+            try:
+                ipv6 = True if ipaddress.ip_address(endpoint).version == 6 else False
+            except ValueError:
+                ipv6 = False
             if protocol == "TCP":
                 client = TCPClient(
                     self._src, endpoint, port, self._record_queue,
-                    connected, action)
+                    connected, action, ipv6=ipv6)
             elif protocol == "UDP":
                 client = UDPClient(
                     self._src, endpoint, port, self._record_queue,
-                    connected, action)
+                    connected, action, ipv6=ipv6)
             elif protocol == "HTTP":
                 client = HTTPClient(
                     self._src, endpoint, port, self._record_queue,
-                    connected, action)
+                    connected, action, ipv6=ipv6)
             else:
                 raise RuntimeError("Invalid protocol name %s" % protocol)
             thread = Thread(target=client.ping)
