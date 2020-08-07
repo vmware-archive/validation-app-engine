@@ -18,18 +18,22 @@ class TestTCPClient(test_base.BaseTestCase):
 
     @mock.patch('socket.socket')
     def test_tcp_traffic_client(self, mock_socket):
-        source = '1.2.3.4'
-        destinations = [('TCP', 12345, '1.2.3.5', True, 1)]
-        record_queue = mp.Queue(2)
-        _traffic_client = TrafficClient(
-            source, destinations, record_queue)
-        _traffic_client._send_traffic()
+        sources = ('1.2.3.4', '::4')
+        destinations = ('1.2.3.5', '::5')
+        for source, dst in zip(sources, destinations):
+            destination = [('TCP', 12345, dst, True, 1)]
+            record_queue = mp.Queue(2)
+            _traffic_client = TrafficClient(
+                source, destination, record_queue)
+            _traffic_client._send_traffic()
 
     @mock.patch('socket.socket')
     def test_udp_traffic_client(self, mock_socket):
-        source = '1.2.3.4'
-        destinations = [('UDP', 12345, '1.2.3.5', True, 1)]
-        record_queue = mp.Queue(2)
-        _traffic_client = TrafficClient(
-            source, destinations, record_queue)
-        _traffic_client._send_traffic()
+        sources = ('1.2.3.4', '::4')
+        destinations = ('1.2.3.5', '::5')
+        for source, dst in zip(sources, destinations):
+            destination = [('UDP', 12345, dst, True, 1)]
+            record_queue = mp.Queue(2)
+            _traffic_client = TrafficClient(
+                source, destination, record_queue)
+            _traffic_client._send_traffic()
