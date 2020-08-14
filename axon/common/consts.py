@@ -20,3 +20,5 @@ AXON_PORT = 5678
 # Recorder Constants
 WAVEFRONT = 'wavefront'
 SQL = 'sql'
+ELASTIC_SEARCH = 'elasticsearch'
+ELASTIC_SEARCH_PORT = 9200

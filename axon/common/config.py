@@ -8,11 +8,12 @@ import os
 import platform
 import socket
 
-from axon.common import utils
+from axon.common import consts, utils
 
 LINUX_OS = "Linux" in platform.uname()
-LOG_FILE = os.environ.get('LOG_FILE', "axon.log")
-utils.setup_logging(log_file=LOG_FILE)
+LOG_FILE = os.environ.get('LOG_FILE', consts.LOG_FILE)
+LOG_DIR = os.environ.get('LOG_DIR', consts.LOG_DIR)
+utils.setup_logging(log_dir=LOG_DIR, log_file=LOG_FILE)
 
 
 # Traffic Server Configs
@@ -45,3 +46,7 @@ NAMESPACE_INTERFACE_NAME_PREFIXES = ["veth", "eth"]
 RECORDER = os.environ.get('RECORDER', None)
 RECORD_COUNT_UPDATER_SLEEP_INTERVAL = 30
 RECORD_UPDATER_THREAD_POOL_SIZE = 50
+
+ELASTIC_SEARCH_SERVER_ADDRESS = os.environ.get('ELASTIC_SEARCH_SERVER_ADDRESS', None)
+ELASTIC_SEARCH_SERVER_PORT = os.environ.get(
+    'ELASTIC_SEARCH_SERVER_PORT', consts.ELASTIC_SEARCH_PORT)
