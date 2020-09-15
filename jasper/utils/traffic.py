@@ -1,19 +1,33 @@
+#!/usr/bin/env python
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: BSD-2 License
+# The full license information can be found in LICENSE.txt
+# in the root directory of this project.
 '''
 A simple traffic utility which starting standalone TCP/UDP client/servers.
 
 USAGE:
 ---------
 # Start TCP Server on port 5649
-$ python -mgrus.utils.traffic -t -v -s -p localhost 5649
+$ python -mjasper.utils.traffic -t -v -s -p localhost 5649
 
 # Start TCP Client to send ping to above server.
-$ python -mgrus.utils.traffic -t -v -c -p localhost 5649
+$ python -mjasper.utils.traffic -t -v -c -p localhost 5649
 '''
 
 import argparse
 
-from grus.traffic import client as hclient
-from grus.traffic import server as hserver
+from jasper.traffic import client as hclient
+from jasper.traffic import server as hserver
+from jasper.utils.common import is_py3
+
+
+def _print(msg):
+    if is_py3():
+        print(msg)
+    else:
+        print msg
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -24,6 +38,9 @@ def main():
     parser.add_argument(
         '-c', '--client', action="store_true",
         help="Run client")
+    parser.add_argument(
+        '-i', '--ipv6', action="store_true",
+        help="Use IPv6 client / servers.")
     parser.add_argument(
         '-p', '--port', nargs='+',
         help="Port to connect")
@@ -53,17 +70,18 @@ def main():
         host = args.port[0]
         port = int(args.port[1])
     except Exception:
-        print ("Invalid host/port")
+        _print("Invalid host/port")
         raise
 
     def ping_handler(payload, data):
         if payload == data:
-            print ("Success : Sent: %s , received: %s" % (payload, data))
+            _print("Success : Sent: %s , received: %s" % (payload, data))
         else:
-            print ("Failure : Sent: %s , received: %s" % (payload, data))
+            _print("Failure : Sent: %s , received: %s" % (payload, data))
 
     if args.server:
-        server(port=port, verbose=verbose).start()
+        ipv6 = args.ipv6
+        server(port=port, verbose=verbose, ipv6=ipv6).start()
     else:
         client(server=host, port=port, verbose=verbose,
                handler=ping_handler).start(tries=10)

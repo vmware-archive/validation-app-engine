@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: BSD-2 License
+# The full license information can be found in LICENSE.txt
+# in the root directory of this project.
 
 import importlib
 import logging
@@ -7,9 +11,6 @@ import zipfile
 
 '''
 A simple module for zipping files and creating egg files.
-
-TODO
-    - We should
 '''
 
 
@@ -44,7 +45,7 @@ class Zipper(object):
                 # TODO : message already imported.
                 return
             mod = importlib.import_module(module_name)
-            modpath, modfile = os.path.split(mod.__file__)
+            modpath, _ = os.path.split(mod.__file__)
 
             # pack the modules at root level. it makes importing
             # modules from egg directly without modifying PYTHONPATH
@@ -69,7 +70,7 @@ class Zipper(object):
         srcdir = self.src if srcdir is None else srcdir
 
         with zipfile.ZipFile(self.dst, mode) as zf:
-            for dirname, subdirs, files in os.walk(srcdir):
+            for dirname, _, files in os.walk(srcdir):
                 for filename in files:
                     # Don't pack .pyc files unless asked to.
                     if self.skip_compiled and filename.endswith('.pyc'):
@@ -80,7 +81,7 @@ class Zipper(object):
                     if atroot:
                         _arcfile = os.path.join(atroot,
                                                 os.path.relpath(_file, srcdir))
-                    print "Writing ", _file, " --> ", _arcfile
+                    print ("Writing ", _file, " --> ", _arcfile)
                     zf.write(filename=_file, arcname=_arcfile)
 
 
