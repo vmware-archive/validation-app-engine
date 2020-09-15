@@ -1,12 +1,18 @@
+#!/usr/bin/env python
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: BSD-2 License
+# The full license information can be found in LICENSE.txt
+# in the root directory of this project.
+
 import socket
 import time
 
-from grus.traffic.connection import Connection
+from jasper.traffic.connection import Connection
 
 class Server(Connection):
 
     def __init__(self, port=None, max_conns=None,
-                 handler=None, verbose=False, _log=None):
+                 handler=None, verbose=False, ipv6=False):
         """
         A basic TCP Server connection listener with default echo reply
         message handler.
@@ -20,8 +26,11 @@ class Server(Connection):
 
         # Don't create a socket until we are ready to bind.
         self.socket = None
-        if _log:
-            self.log = _log
+        self._ipv6 = ipv6
+
+
+    def echo_handler(self, payload):
+        raise NotImplementedError("Handler not implemented in %s" % self.__class__.__name__)
 
 
 class TCPServer(Server):
@@ -30,7 +39,9 @@ class TCPServer(Server):
         """
         Returns a simple TCP server socket.
         """
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock_type = socket.AF_INET6 if self._ipv6 else socket.AF_INET
+        self.socket = socket.socket(sock_type, socket.SOCK_STREAM)
+
     def start(self):
         """
         API to start server at the requested port and other settings.
@@ -83,7 +94,8 @@ class UDPServer(Server):
         """
         Returns a simple TCP server socket.
         """
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock_type = socket.AF_INET6 if self._ipv6 else socket.AF_INET
+        self.socket = socket.socket(sock_type, socket.SOCK_DGRAM)
 
     def start(self):
         """

@@ -1,8 +1,14 @@
+#!/usr/bin/env python
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: BSD-2 License
+# The full license information can be found in LICENSE.txt
+# in the root directory of this project.
 
 import socket
 import time
 
-from grus.traffic.connection import Connection
+from jasper.traffic.connection import Connection
+from jasper.utils.common import is_ipv6_address
 
 
 class PingValidationError(Exception):
@@ -26,6 +32,7 @@ class Client(Connection):
             _ = err
             self.interval = self.PING_INTERVAL
         self._handler = self.echo_validator if handler is None else handler
+        self._ipv6 = is_ipv6_address(self.server)
         super(Client, self).__init__(verbose=verbose)
 
     def echo_validator(self, payload, data):
@@ -56,6 +63,13 @@ class Client(Connection):
             if self.interval:
                 time.sleep(self.interval)
 
+    def ping(self, payload):
+        raise NotImplementedError("Ping not implemented in %s" % self.__class__.__name__)
+
+    def _prepare_payload(self, payload):
+        return payload.encode('utf-8') if self._ipv6 else payload
+
+
 class TCPClient(Client):
 
     def _create_socket(self):
@@ -72,7 +86,8 @@ class TCPClient(Client):
             self._create_socket()
             self.socket.connect((self.server, self.port))
             self.socket.settimeout(None)
-            self.socket.send(payload.encode('utf-8'))
+            payload = self._prepare_payload(payload)
+            self.socket.send(payload)
             data = self.socket.recv(self.MAX_PAYLOAD_SIZE)
             # close socket connection
             self.socket.close()
@@ -104,7 +119,8 @@ class UDPClient(Client):
             # create socket
             self._create_socket()
             addr = (self.server, self.port)
-            self.socket.sendto(payload.encode('utf-8'), addr)
+            payload = self._prepare_payload(payload)
+            self.socket.sendto(payload, addr)
             try:
                 data, server = self.socket.recvfrom(self.MAX_PAYLOAD_SIZE)
             except Exception:
