@@ -72,7 +72,7 @@ class TCPClient(Client):
             self._create_socket()
             self.socket.connect((self.server, self.port))
             self.socket.settimeout(None)
-            self.socket.send(payload)
+            self.socket.send(payload.encode('utf-8'))
             data = self.socket.recv(self.MAX_PAYLOAD_SIZE)
             # close socket connection
             self.socket.close()
@@ -104,7 +104,7 @@ class UDPClient(Client):
             # create socket
             self._create_socket()
             addr = (self.server, self.port)
-            self.socket.sendto(payload, addr)
+            self.socket.sendto(payload.encode('utf-8'), addr)
             try:
                 data, server = self.socket.recvfrom(self.MAX_PAYLOAD_SIZE)
             except Exception:
