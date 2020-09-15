@@ -13,7 +13,13 @@ log = logging.getLogger(__name__)
 
 def is_ipv6_address(address):
     try:
-        return ipaddress.ip_address(address).version == '6'
+        if address == 'localhost':
+            _address = '127.0.0.1'
+        elif address == 'ip6-localhost':
+            _address = '::1'
+        else:
+            _address = address
+        return ipaddress.ip_address(_address).version == 6
     except Exception as err:
         log.exception(err)
         log.warn("Error while trying to interprete %s as ip address.",
