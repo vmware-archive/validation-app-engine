@@ -53,14 +53,14 @@ def main():
         host = args.port[0]
         port = int(args.port[1])
     except Exception:
-        print "Invalid host/port"
+        print ("Invalid host/port")
         raise
 
     def ping_handler(payload, data):
         if payload == data:
-            print "Success : Sent: %s , received: %s" % (payload, data)
+            print ("Success : Sent: %s , received: %s" % (payload, data))
         else:
-            print "Failure : Sent: %s , received: %s" % (payload, data)
+            print ("Failure : Sent: %s , received: %s" % (payload, data))
 
     if args.server:
         server(port=port, verbose=verbose).start()
