@@ -74,11 +74,6 @@ class TCPServer(Server):
         finally:
             self.close()
 
-    def close(self):
-        if self.socket:
-            self.socket.close()
-            self.socket = None
-
     def echo_handler(self, conn):
         """
         A simple default echo message handler.

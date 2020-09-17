@@ -16,6 +16,8 @@ $ python -mjasper.utils.traffic -t -v -c -p localhost 5649
 '''
 
 import argparse
+import signal
+import sys
 
 from jasper.traffic import client as hclient
 from jasper.traffic import server as hserver
@@ -56,12 +58,12 @@ def main():
 
     verbose = bool(args.verbose)
 
-    client, server = None, None
+    Client, Server = None, None
 
     if args.tcp:
-        client, server = hclient.TCPClient, hserver.TCPServer
+        Client, Server = hclient.TCPClient, hserver.TCPServer
     elif args.udp:
-        client, server = hclient.UDPClient, hserver.UDPServer
+        Client, Server = hclient.UDPClient, hserver.UDPServer
 
     assert(args.port)
     try:
@@ -81,11 +83,27 @@ def main():
             _print("Failure : Sent: %s , received: %s" % (payload, data))
 
     ipv6 = args.ipv6
+
+    _client, _server = None, None
+    def signal_handler(sig, frame):
+        if _client:
+            _client.close()
+            print ("\nClosed the client connection")
+        if _server:
+            _server.close()
+            print ("\nClosed the server connection")
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+
     if args.server:
-        server(port=port, verbose=verbose, ipv6=ipv6).start()
+        ipv6 = args.ipv6
+        _server = Server(port=port, verbose=verbose, ipv6=ipv6)
+        _server.start()
     else:
-        client(server=host, port=port, verbose=verbose,
-               handler=ping_handler, ipv6=ipv6).start(tries=10)
+        _client = Client(server=host, port=port, verbose=verbose,
+                         handler=ping_handler)
+        _client.start(tries=10)
 
 
 if __name__ == '__main__':

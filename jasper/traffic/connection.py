@@ -27,11 +27,10 @@ class Connection(object):
         self.log = logging.getLogger(__name__)
         self.verbose = verbose
         self._stop_event = threading.Event()
+        self.socket = None
 
     def _create_socket(self):
-        # TODO : make this mandatory to define and class
-        # abstract base class.
-        raise Exception("Shouldn't have come here.")
+        raise NotImplementedError("%s::_create_socket not implemented." % type(self).name)
 
     def stop(self):
         self._stop_event.set()
@@ -43,7 +42,10 @@ class Connection(object):
         self._stop_event.clear()
 
     def start(self):
-        pass
+        raise NotImplementedError("%s::start not implemented" % type(self).name)
 
     def close(self):
-        pass
+        self.stop()
+        if self.socket:
+            self.socket.close()
+            self.socket = None
