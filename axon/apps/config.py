@@ -27,20 +27,29 @@ class Config(db.Model, BaseApp):
                     'param': 'text',
                     'value': 'text',
                     },
+                'primary_key': 'param'  # avoid duplicate entries.
             }]
         }
     VALIDATE_BEFORE_WRITE = True
+
+    DEFAULT_CONFIG = '/etc/axon/axon.conf'
 
     def __init__(self):
         super(Config, self).__init__()
         self._params = {}
         self._read_config()
-        self._update_from_db()
-        self.save_params()
+        self.load_from_db()
+        self.save_to_db()
 
     def _read_config(self):
+        """
+        Reads config from default config file for the service.
+
+        We do not write these configs into the database yet as database
+        configs are supposd to overwrite.
+        """
         configs = []
-        with open('/etc/axon/axon.conf', 'r') as fp:
+        with open(self.DEFAULT_CONFIG, 'r') as fp:
             configs = fp.readlines()
 
         for config in configs:
@@ -48,36 +57,48 @@ class Config(db.Model, BaseApp):
             if config.startswith('#'):
                 continue
             param, val = config.split('=')
-            self.set_param(param, val,
-                           write_to_db=False)
+            self._params[param] = val   # initialize values.
 
-    def _update_from_db(self):
+    def load_from_db(self):
         """
-        Local database / persisted file is the source of truth.
-        It will override the values read from config file.
+        Load config params from database file to local cache.
         """
-        pass
+        configs = self.read(tbl=self.TABLE)
+        for key, val in configs:
+            self._params[key] = val
+
+    def save_to_db(self):
+        """
+        Save config params in local cache to database file.
+        """
+        for param, val in self._params.items():
+            self._persist_param(param, val)
+
+        self.commit()
 
     def get_param(self, param):
-        if param in self._params:
-            # local params would always be updated.
-            return self._params[param]
-
-        records = self.read(self.TABLE, param=param)
-        # TODO : avoid multiple records by using primary key
-        if records:
-            return records[0][1]
-        return None
+        """
+        Return the value of a config param. Param is always
+        returned from local cache as it is simply a reflector of database file.
+        """
+        return self._params.get(param, None)
 
     def set_param(self, param, val, write_to_db=True):
         self._params[param] = val
-        if write_to_db:
-            self.write(self.TABLE, param=param, value=val)
 
-    def save_params(self):
-        for key, val in self._params.items():
-            self.write(self.TABLE, param=key, value=val)
-        self.commit()
+        if write_to_db:
+            self._persist_param(param, val)
+            self.commit()
+
+    def _persist_param(self, param, val):
+        """
+        Sets a param, val in database file.
+        """
+        record = self.read(tbl=self.TABLE, param=param)
+        if record:
+            self.update(tbl=self.TABLE, condition={'param':param}, value=val)
+        else:
+            self.write(tbl=self.TABLE, param=param, value=val)
 
 
 def _get_configs():
