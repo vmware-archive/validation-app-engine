@@ -148,6 +148,10 @@ class ThreadedUDPServer(socketserver.ThreadingMixIn,
         pass
 
 
+class ThreadedHTTPServerV6(ThreadedHTTPServer):
+    address_family = socket.AF_INET6
+
+
 class ThreadedTCPServerV6(ThreadedTCPServer):
     address_family = socket.AF_INET6
 
@@ -213,7 +217,9 @@ def create_server_class(protocol, port, source, server_type='socket'):
         args = (source, protocol, port)
         kwargs = {}
     elif protocol == 'HTTP':
-        server_class = ThreadedHTTPServer
+        server_class = ThreadedHTTPServerV6 \
+            if ipaddress.ip_address(source).version == 6 \
+            else ThreadedHTTPServer
         args = ((source, int(port)), HTTPRequestHandler)
         kwargs = {}
     else:
