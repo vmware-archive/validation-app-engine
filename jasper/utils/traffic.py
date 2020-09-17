@@ -72,17 +72,20 @@ def main():
         raise
 
     def ping_handler(payload, data):
+        if is_py3:
+            payload = payload.decode()
+            data = data.decode()
         if payload == data:
             _print("Success : Sent: %s , received: %s" % (payload, data))
         else:
             _print("Failure : Sent: %s , received: %s" % (payload, data))
 
+    ipv6 = args.ipv6
     if args.server:
-        ipv6 = args.ipv6
         server(port=port, verbose=verbose, ipv6=ipv6).start()
     else:
         client(server=host, port=port, verbose=verbose,
-               handler=ping_handler).start(tries=10)
+               handler=ping_handler, ipv6=ipv6).start(tries=10)
 
 
 if __name__ == '__main__':

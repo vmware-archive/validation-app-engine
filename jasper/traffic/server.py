@@ -65,7 +65,7 @@ class TCPServer(Server):
             while not self.is_event_set():
                 conn, addr = self.socket.accept()
                 if self.verbose:
-                    msg = "Connection request received from: %s:%s" % addr
+                    msg = "Connection request received from: %s:%s" % (addr[0], addr[1])
                     self.log.info(msg)
                 self._handler(conn)
         except Exception as err:
@@ -113,7 +113,7 @@ class UDPServer(Server):
         while not self.is_event_set():
             data, addr = self.socket.recvfrom(self.MAX_PAYLOAD_SIZE)
             if self.verbose:
-                msg = "Connection request received from: %s:%s" % addr
+                msg = "Connection request received from: %s:%s" % (addr[0], addr[1])
                 self.log.info(msg)
             self._handler(data, addr)
 

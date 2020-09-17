@@ -20,7 +20,7 @@ class Client(Connection):
     CONNECTION_TIMEOUT = 2
 
     def __init__(self, server, port, verbose=False, handler=None,
-                 interval=None):
+                 interval=None, ipv6=None):
         """
         A simple TCP client which binds to a specified host and port.
         """
@@ -32,7 +32,7 @@ class Client(Connection):
             _ = err
             self.interval = self.PING_INTERVAL
         self._handler = self.echo_validator if handler is None else handler
-        self._ipv6 = is_ipv6_address(self.server)
+        self._ipv6 = ipv6 or is_ipv6_address(self.server)
         super(Client, self).__init__(verbose=verbose)
 
     def echo_validator(self, payload, data):
