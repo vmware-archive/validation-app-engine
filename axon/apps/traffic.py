@@ -28,7 +28,11 @@ class TrafficApp(object):
         self._cs_db = ConnectedStateProcessor(DBConnectedState())
         namespaces = NamespaceManager().get_all_namespaces()
         record_queue = Queue(RECORD_QUEUE_SIZE) if record_queue is None else record_queue
-        if namespaces and self._conf.NAMESPACE_MODE:
+        if self._conf.NAMESPACE_MODE:
+            if not namespaces:
+                self.log.warning("No namespace is found but NAMESPACE_MODE "
+                                 "is set to True on config file. Create namespace(s) "
+                                 "and run rediscover_namespaces")
             self.namespace_mode = True
             self._server_agent = AxonNameSpaceServerAgent()
             self._client_agent = AxonNameSpaceClientAgent(record_queue)
@@ -104,21 +108,21 @@ class TrafficApp(object):
                 "as the Axon is running in non namespace mode")
         self._server_agent.start_servers(namespace)
 
-    def stop_server(self, protocol, port, namespace=None):
+    def stop_server(self, protocol, port, namespace=None, endpoint=None):
         self.log.info("stop %s server called on port %s" % (protocol, port))
         if not self.namespace_mode and namespace:
             raise ValueError(
                 "namespace parameter must not be provided,"
                 "as the Axon is running in non namespace mode")
-        self._server_agent.stop_server(protocol, port, namespace)
+        self._server_agent.stop_server(protocol, port, namespace, endpoint)
 
-    def stop_client(self, namespace=None):
+    def stop_client(self, namespace=None, endpoint=None):
         self.log.info("====stop client initiated====")
         if not self.namespace_mode and namespace:
             raise ValueError(
                 "namespace parameter must not be provided,"
                 "as the Axon is running in non namespace mode")
-        self._client_agent.stop_client(namespace)
+        self._client_agent.stop_client(namespace, endpoint)
 
     def stop_clients(self, namespace=None):
         self.log.info("====stop clients initiated====")
@@ -131,3 +135,8 @@ class TrafficApp(object):
     def start_clients(self):
         self.log.info("====start clients initiated====")
         self._client_agent.start_clients()
+
+    def rediscover_namespaces(self):
+        self.log.info("====rediscover namespaces initiated====")
+        self._server_agent.rediscover_namespaces()
+        self._client_agent.rediscover_namespaces()
