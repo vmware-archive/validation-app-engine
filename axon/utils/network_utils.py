@@ -4,6 +4,7 @@
 # The full license information can be found in LICENSE.txt
 # in the root directory of this project.
 
+from collections import defaultdict
 import multiprocessing
 import platform
 if "Linux" in platform.uname():  # noqa
@@ -11,6 +12,8 @@ if "Linux" in platform.uname():  # noqa
 import psutil
 import subprocess
 import axon.common.config as axon_config
+
+INTERFACE_FAMILY = (2, 10)
 
 
 def get_interfaces_in_namespace(return_dict):
@@ -55,7 +58,7 @@ class Namespace(object):
             process.start()
             process.join()
         for name, snics in list(return_dict['result'].items()):
-            for nic in [snic for snic in snics if snic.family == 2]:
+            for nic in [snic for snic in snics if snic.family in INTERFACE_FAMILY]:
                 self._interface_list.append(Interface(
                     name, nic.address, nic.family,
                     nic.netmask, nic.broadcast))
@@ -120,12 +123,14 @@ class NamespaceManager(object):
         """
         namespaces_ips = []
         for np in list(self._namespace_map.values()):
-            interface = [iface for iface in np.interfaces for prefix in
-                         axon_config.NAMESPACE_INTERFACE_NAME_PREFIXES
-                         if prefix in iface.name]
-            if not interface:
+            interfaces = [iface for iface in np.interfaces for prefix in
+                          axon_config.NAMESPACE_INTERFACE_NAME_PREFIXES
+                          if prefix in iface.name]
+            if not interfaces:
                 continue
-            namespaces_ips.append(interface[0].address)
+            for iface in interfaces:
+                namespaces_ips.append(iface.address)
+
         return namespaces_ips
 
 
@@ -171,16 +176,16 @@ class InterfaceManager(object):
     Class that controls all Interface information on host
     """
     def __init__(self):
-        self._interface_map = {}
+        self._interface_map = defaultdict(list)
         self._discover_interfaces()
 
     def _discover_interfaces(self):
         addrs = psutil.net_if_addrs()
         for name, snics in list(addrs.items()):
-            for nic in [snic for snic in snics if snic.family == 2]:
-                self._interface_map[name] = Interface(
-                    name, nic.address, nic.family,
-                    nic.netmask, nic.broadcast)
+            for nic in [snic for snic in snics if snic.family in INTERFACE_FAMILY]:
+                self._interface_map[name].append(
+                    Interface(name, nic.address, nic.family, nic.netmask,
+                              nic.broadcast))
 
     def get_all_interfaces(self):
         """
@@ -190,21 +195,30 @@ class InterfaceManager(object):
         """
         return list(self._interface_map.keys())
 
-    def get_interface(self, name):
+    def get_interface(self, name, ip=None):
         """
         Get detail about a particular interface
         :param name: name of the interface
         :type name: str
+        :param ip: IPv4 or IPv6 address to be matched
+        :type ip: str
         :return: interface object as dict
         :rtype: dict
         """
-        interface = self._interface_map.get(name)
-        if interface:
-            return interface.as_dict()
-        else:
+        snics = self._interface_map.get(name)
+        if not snics:
             return None
+        for snic in snics:
+            if not ip:
+                # Return the first interface found in snics if IP address is not
+                # provided
+                return snic.as_dict()
+            else:
+                if snic.address == ip:
+                    return snic.as_dict()
 
     def get_interface_by_ip(self, ip):
         for name, interface in list(self._interface_map.items()):
-            if interface.address == ip:
-                return name
+            for sub_interface in interface:
+                if sub_interface.address == ip:
+                    return name
