@@ -74,6 +74,15 @@ def clear_traffic_rules(delete_param):
         client.traffic.delete_traffic_rules()
 
 
+def rediscover_namespaces(discover_param):
+    server = discover_param[0]
+    proxy_host = discover_param[1]
+    server_port = discover_param[2]
+    with AxonClient(server, proxy_host=proxy_host, axon_port=server_port, retry_count=30,
+                    sleep_interval=1) as client:
+        client.traffic.rediscover_namespaces()
+
+
 class WorkloadVifsMap(object):
     def __init__(self):
         self.vif_map_load = False
@@ -219,6 +228,16 @@ class DataCenterTrafficController(TrafficController):
         pool = ThreadPool(THREADPOOL_SIZE)
         params = [(server, self._gw_host, self._axon_server_port) for server in servers]
         pool.map(clear_traffic_rules, params)
+        pool.close()
+        pool.join()
+
+    def rediscover_namespaces(self, servers=None):
+        servers = servers if servers else list(self._workload_servers.keys())
+        if not servers:
+            return
+        pool = ThreadPool(THREADPOOL_SIZE)
+        params = [(server, self._gw_host, self._axon_server_port) for server in servers]
+        pool.map(rediscover_namespaces, params)
         pool.close()
         pool.join()
 
