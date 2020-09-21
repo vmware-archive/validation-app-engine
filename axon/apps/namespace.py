@@ -19,3 +19,6 @@ class NamespaceApp(object):
 
     def list_namespaces_ips(self):
         return self._ns_manager.get_all_namespaces_ips()
+
+    def discover_namespaces(self):
+        self._ns_manager.discover_namespaces()
