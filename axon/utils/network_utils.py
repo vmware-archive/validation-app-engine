@@ -96,6 +96,9 @@ class NamespaceManager(object):
                 else:
                     self._namespace_interface_map[name] = None
 
+    def discover_namespaces(self):
+        self._discover_namespaces()
+
     def get_namespace_interface_map(self):
         return self._namespace_interface_map
 
