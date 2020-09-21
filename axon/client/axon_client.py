@@ -105,6 +105,9 @@ class NamespaceManager(Manager):
     def list_namespaces_ips(self):
         return self._client.namespace.list_namespaces_ips()
 
+    def discover_namespaces(self):
+        self._client.namespace.discover_namespaces()
+
 
 class InterfaceManager(Manager):
 
