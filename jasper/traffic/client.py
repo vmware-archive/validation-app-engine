@@ -3,16 +3,19 @@
 # SPDX-License-Identifier: BSD-2 License
 # The full license information can be found in LICENSE.txt
 # in the root directory of this project.
-
+import logging
 import socket
 import time
 
 from jasper.traffic.connection import Connection
 from jasper.utils.common import is_ipv6_address, is_py3
 
+log = logging.getLogger(__name__)
+
 
 class PingValidationError(Exception):
     pass
+
 
 class Client(Connection):
     PAYLOAD = 'Dunkirk!!'
@@ -31,7 +34,7 @@ class Client(Connection):
         except (ValueError, TypeError) as err:
             _ = err
             self.interval = self.PING_INTERVAL
-        self._handler = self.echo_validator if handler is None else handler
+        self._handler = handler or self.echo_validator
         self._ipv6 = ipv6 or is_ipv6_address(self.server)
         super(Client, self).__init__(verbose=verbose)
 
@@ -41,6 +44,7 @@ class Client(Connection):
         """
         try:
             assert(data == self.PAYLOAD)
+            log.info("Sent : %s Received : %s", self.PAYLOAD, data)
         except AssertionError as err:
             _ = err
             raise PingValidationError()
@@ -105,6 +109,7 @@ class TCPClient(Client):
                 self.log.error(msg)
         finally:
             self._handler(payload, data)
+
 
 class UDPClient(Client):
 

@@ -4,9 +4,12 @@
 # The full license information can be found in LICENSE.txt
 # in the root directory of this project.
 
+import fcntl
 import ipaddress
 import logging
 import platform
+import socket
+import struct
 
 log = logging.getLogger(__name__)
 
@@ -29,3 +32,18 @@ def is_ipv6_address(address):
 
 def is_py3():
     return platform.python_version().startswith('3')
+
+
+def get_mgmt_ifname():
+    """" Management Interface name for current platform """
+    system = platform.system()
+    if system == 'Linux':
+        return 'eth0'
+    elif system == 'Windows':
+        return 'eth0'
+    elif system == 'Darwin':
+        return 'en0'
+
+
+def get_host_name():
+    return socket.gethostname()
