@@ -14,5 +14,5 @@ class InterfaceApp(object):
     def list_interfaces(self):
         return self._if_mngr.get_all_interfaces()
 
-    def get_interface(self, name):
-        return self._if_mngr.get_interface(name)
+    def get_interface(self, name, ip=None):
+        return self._if_mngr.get_interface(name, ip)

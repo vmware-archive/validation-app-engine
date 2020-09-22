@@ -114,8 +114,8 @@ class InterfaceManager(Manager):
     def list_interfaces(self):
         return self._client.interface.list_interfaces()
 
-    def get_interface(self, name):
-        return self._client.interface.get_interface(name)
+    def get_interface(self, name, ip=None):
+        return self._client.interface.get_interface(name, ip)
 
 
 class ResourceMonitorManager(Manager):
@@ -244,7 +244,8 @@ class AxonClient(object):
                 time.sleep(sleep_interval)
             except socket.error as e:
                 last_exception = e
-                if e.errno == errno.ECONNRESET or e.errno == errno.ECONNREFUSED:
+                errno = e.errno
+                if errno == errno.ECONNRESET or errno == errno.ECONNREFUSED:
                     time.sleep(sleep_interval)
                 else:
                     raise
