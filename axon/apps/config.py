@@ -5,6 +5,7 @@
 # in the root directory of this project.
 
 import logging
+import os
 from sql30 import db
 
 
@@ -16,10 +17,10 @@ configs = None
 
 class Config(db.Model, BaseApp):
     NAME = "CONFIG"
-
+    DB_NAME = 'config.db'
     TABLE = 'config'
     DB_SCHEMA = {
-        'db_name': 'config.db',
+        'db_name': DB_NAME,
         'tables': [
             {
                 'name': TABLE,
@@ -34,9 +35,16 @@ class Config(db.Model, BaseApp):
 
     DEFAULT_CONFIG = '/etc/axon/axon.conf'
 
-    def __init__(self):
-        super(Config, self).__init__()
+    def __init__(self, db_file=None):
+        # Set database name.
+        db_name = db_file or self.DB_NAME
+        super(Config, self).__init__(db_name=db_name)
+        self.table = self.TABLE
+
+        # set params
         self._params = {}
+
+        # Read configs, load from db file.
         self._read_config()
         self.load_from_db()
         self.save_to_db()
@@ -49,8 +57,9 @@ class Config(db.Model, BaseApp):
         configs are supposd to overwrite.
         """
         configs = []
-        with open(self.DEFAULT_CONFIG, 'r') as fp:
-            configs = fp.readlines()
+        if os.path.exists(self.DEFAULT_CONFIG):
+            with open(self.DEFAULT_CONFIG, 'r') as fp:
+                configs = fp.readlines()
 
         for config in configs:
             config = config.strip()
@@ -63,7 +72,7 @@ class Config(db.Model, BaseApp):
         """
         Load config params from database file to local cache.
         """
-        configs = self.read(tbl=self.TABLE)
+        configs = self.read()
         for key, val in configs:
             self._params[key] = val
 
@@ -94,11 +103,11 @@ class Config(db.Model, BaseApp):
         """
         Sets a param, val in database file.
         """
-        record = self.read(tbl=self.TABLE, param=param)
+        record = self.read(param=param)
         if record:
-            self.update(tbl=self.TABLE, condition={'param':param}, value=val)
+            self.update(condition={'param':param}, value=val)
         else:
-            self.write(tbl=self.TABLE, param=param, value=val)
+            self.write(param=param, value=val)
 
 
 def _get_configs():
