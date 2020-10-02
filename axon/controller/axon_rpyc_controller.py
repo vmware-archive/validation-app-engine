@@ -13,6 +13,7 @@ from rpyc.utils.server import ThreadPoolServer
 
 from axon.common import config as conf
 
+from axon.apps.config import get_configs
 from axon.apps.interface import InterfaceApp
 from axon.apps.iperf import Iperf
 from axon.apps.monitor import ResourceMonitor
@@ -106,7 +107,8 @@ class AxonService(AxonServiceBase):
         self.exposed_monitor = exposed_ResourceMonitor(self._record_queue)
         self.exposed_tcpdump = exposed_TCPDump()
         self.exposed_iperf = exposed_Iperf()
-        self.exposed_scapy= exposed_Scapy()
+        self.exposed_scapy = exposed_Scapy()
+        self.exposed_configs = get_configs()
 
 
 class AxonController(object):
