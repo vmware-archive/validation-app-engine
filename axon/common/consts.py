@@ -6,12 +6,18 @@
 
 import platform
 
-LINUX_OS = "Linux" in platform.uname()
+SYSTEM = platform.system()
+LINUX_OS = True if SYSTEM == 'Linux' else False
+MAC_OS = True if SYSTEM == 'Darwin' else False
+WIN_OS = True if SYSTEM == 'Windows' else False
 
 # Logging Constants
 LINUX_LOG_DIR = "/var/log/axon"
 WIN_LOG_DIR = "C:\\axon\\log"
-LOG_DIR = LINUX_LOG_DIR if LINUX_OS else WIN_LOG_DIR
+if LINUX_OS or MAC_OS:
+    LOG_DIR = LINUX_LOG_DIR
+elif WIN_OS:
+    LOG_DIR = WIN_LOG_DIR
 LOG_FILE = "axon.log"
 
 # Axon Service Constants
