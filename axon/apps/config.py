@@ -66,12 +66,9 @@ ELASTIC_SEARCH_SERVER_PORT = os.environ.get(
 # # # # # End of Configurable Variables  # # # # #
 
 
-class Config(db.Model, BaseApp):
-    NAME = "CONFIG"
-    DB_NAME = 'config.db'
+class ConfigDB(db.Model):
+    DB_NAME = 'params.db'
     TABLE = 'config'
-    SINGLE_QUOTE = '\''
-    DOUBLE_QUOTE = '\"'
 
     DB_SCHEMA = {
         'db_name': DB_NAME,
@@ -87,6 +84,9 @@ class Config(db.Model, BaseApp):
             }]
         }
     VALIDATE_BEFORE_WRITE = True
+
+class Config(ConfigDB, BaseApp):
+    NAME = "CONFIG"
 
     def __init__(self, db_file=None):
         # Set database name.
@@ -119,33 +119,25 @@ class Config(db.Model, BaseApp):
 
     def _type_handler(self, val, type_name):
 
-        types_map = {'str': lambda x: x,
-                     'int': lambda x: int(x),
-                     'float': lambda x: float(x),
-                     'bool': lambda x: True if x == 'True' else False,
-                     'list': lambda x: json.loads(x.replace(self.SINGLE_QUOTE,
-                                                            self.DOUBLE_QUOTE)),
-                     'dict': lambda x: json.loads(x.replace(self.SINGLE_QUOTE,
-                                                            self.DOUBLE_QUOTE)),
-                     'NoneType': lambda x: None,
-                     }
+        types_map = {
+                'int': lambda x: int(x),
+                'float': lambda x: float(x),
+                'tuple': lambda x: tuple(x),
+                'set': lambda x: set(x),
+                'bool': lambda x: True if x == 'True' else False,
+                'NoneType': lambda x: None,
+            }
+        val = json.loads(val)
 
-        if type_name in types_map:
-            return types_map[type_name](val)
-        elif type_name == 'tuple':
-            val = val.replace('(', '[').replace(')', ']')
-            return tuple(types_map['list'](val))
-        elif type_name == 'set':
-            s_val = val.replace('{', '[').replace('}', ']')
-            return set(types_map['list'](s_val))
-        else:
-            return val
+        return types_map[type_name](val) if type_name in types_map else val
 
     def load_from_db(self):
         """
         Load config params from database file to local cache.
         """
-        configs = self.read()
+        configs = []
+        with ConfigDB() as db:
+            configs = db.read(tbl=self.TABLE)
         for key, val, type_name in configs:
             self._params[key] = self._type_handler(val, type_name)
 
@@ -153,10 +145,10 @@ class Config(db.Model, BaseApp):
         """
         Save config params in local cache to database file.
         """
-        for param, val in self._params.items():
-            self._persist_param(param, val)
-
-        self.commit()
+        with ConfigDB() as db:
+            db.table = self.TABLE
+            for param, val in self._params.items():
+                self._persist_param(param, val, db)
 
     def get_param(self, param):
         """
@@ -169,19 +161,28 @@ class Config(db.Model, BaseApp):
         self._params[param] = val
 
         if write_to_db:
-            self._persist_param(param, val)
-            self.commit()
+            with ConfigDB() as db:
+                db.table = self.TABLE
+                self._persist_param(param, val, db)
 
-    def _persist_param(self, param, val):
+    def _persist_param(self, param, val, db_handle):
         """
         Sets a param, val in database file.
         """
-        record = self.read(param=param)
         type_name = type(val).__name__
+        if isinstance(val, set):
+              # json.dumps can't serialize sets. We still return the
+              # value as set as type is stored as "set"
+            val = list(val)
+        record = db_handle.read(param=param)
         if record:
-            self.update(condition={'param': param}, value=str(val), typename=type_name)
+            db_handle.update(condition={'param': param},
+                             value=json.dumps(val),
+                             typename=type_name)
         else:
-            self.write(param=param, value=str(val), typename=type_name)
+            db_handle.write(param=param,
+                            value=json.dumps(val),
+                            typename=type_name)
 
     exposed_get_param = get_param
     exposed_set_param = set_param
