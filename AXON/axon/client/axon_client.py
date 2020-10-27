@@ -117,8 +117,14 @@ class InterfaceManager(Manager):
     def list_interfaces(self):
         return self._client.interface.list_interfaces()
 
-    def get_interface(self, name):
-        return self._client.interface.get_interface(name)
+    def get_interface(self, name, ip=None):
+        return self._client.interface.get_interface(name, ip)
+
+    def get_all_ips(self):
+        return self._client.interface.get_all_ips()
+
+    def get_ips_by_interface(self, interface):
+        return self._client.interface.get_ips_by_interface(interface)
 
 
 class ResourceMonitorManager(Manager):
@@ -187,6 +193,15 @@ class ScapyManager(Manager):
         self._client.scapy.close_session()
 
 
+class ConfigManager(Manager):
+
+    def get_param(self, param):
+        return self._client.configs.get_param(param)
+
+    def set_param(self, param, val):
+        return self._client.configs.set_param(param, val)
+
+
 class AxonClient(object):
     """
     Top level object to access Axon API
@@ -222,6 +237,7 @@ class AxonClient(object):
         self.pcap = TCPDumpManager(self.rpc_client.root)
         self.iperf = IperfManager(self.rpc_client.root)
         self.scapy = ScapyManager(self.rpc_client.root)
+        self.configs = ConfigManager(self.rpc_client.root)
 
     def _connect(self, retry_count, sleep_interval, request_timeout):
 

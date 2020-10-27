@@ -96,3 +96,24 @@ class WavefrontRecordCountHandler(RecordCountHandler):
                 self._latency_sum, self._samples, created)
             self._latency_sum = 0
             self._samples = 0
+
+
+class ElasticSearchRecordCountHandler(RecordCountHandler):
+
+    def __init__(self, queue, es_client):
+        super(ElasticSearchRecordCountHandler, self).__init__(queue)
+        self._es_client = es_client
+
+    def _create_record_count(self):
+        created = time.time()
+        self._es_client.create_record_count(self._proto_record_count, created)
+        self._proto_record_count = defaultdict(
+            lambda: {'success': 0, 'failure': 0})
+
+    def _create_latency_stats(self):
+        created = time.time()
+        if self._samples > 0:
+            self._es_client.create_latency_stats(
+                self._latency_sum, self._samples, created)
+            self._latency_sum = 0
+            self._samples = 0

@@ -9,10 +9,12 @@ from multiprocessing import Queue
 
 from axon.db.sql.analytics import session_scope
 from axon.db.sql.repository import Repositories
+from axon.db.elastic_search.es_client import ElasticSearchClient
 from axon.db.wavefront.wavefront_client import WavefrontClient
 from axon.db.record_count import SqlRecordCountHandler, \
-    WavefrontRecordCountHandler
+    WavefrontRecordCountHandler, ElasticSearchRecordCountHandler
 from axon.db.record import ResourceRecord
+
 
 class RecordHandler(object):
 
@@ -105,3 +107,21 @@ class WaveFrontRecorder(RecordHandler):
 
     def record_resource(self, record):
         self._wf_client.create_resource_record(record)
+
+
+class ElasticSearchRecorder(RecordHandler):
+    log = logging.getLogger(__name__)
+
+    def __init__(self, host, port):
+        super(ElasticSearchRecorder, self).__init__()
+        self._queue = Queue(1000)
+        self._es_client = ElasticSearchClient(host, port)
+        ElasticSearchRecordCountHandler(self._queue, self._es_client).start()
+
+    def record_traffic(self, record):
+        self._queue.put(record)
+        self._es_client.create_traffic_record(record)
+
+    def record_resource(self, record):
+        pass
+

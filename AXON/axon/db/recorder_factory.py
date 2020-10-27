@@ -1,4 +1,5 @@
-from axon.db.recorder import WaveFrontRecorder, SqlDbRecorder
+from axon.db.recorder import WaveFrontRecorder, SqlDbRecorder, \
+    ElasticSearchRecorder
 from axon.common import config as conf
 from axon.common import consts
 
@@ -18,6 +19,12 @@ class RecorderFactory(object):
                 token = conf.WAVEFRONT_SERVER_API_TOKEN
             return WaveFrontRecorder(server, proxy, token)
 
+        def get_es_recorder():
+            if conf.ELASTIC_SEARCH_SERVER_ADDRESS:
+                server = conf.ELASTIC_SEARCH_SERVER_ADDRESS
+                port = conf.ELASTIC_SEARCH_SERVER_PORT
+                return ElasticSearchRecorder(server, port)
+
 
         if not conf.RECORDER:   # no recorder specified
             return [SqlDbRecorder()]
@@ -30,5 +37,8 @@ class RecorderFactory(object):
 
         if consts.SQL in recorders:
             recs.append(SqlDbRecorder())
+
+        if consts.ELASTIC_SEARCH in recorders:
+            recs.append(get_es_recorder())
 
         return recs
