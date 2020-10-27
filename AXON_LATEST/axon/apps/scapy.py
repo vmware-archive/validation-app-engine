@@ -23,8 +23,7 @@ class Exec(BaseApp):
     def execute(self, code):
         # TODO : Delete this before we merge it upstream. 
         # It can be a potential security vulnerability.
-        # return exec(code)
-        pass # WARNING : above line allows to execute anything.
+        return exec(code)
 
 
 class Scapy(Exec):
