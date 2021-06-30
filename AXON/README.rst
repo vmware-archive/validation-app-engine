@@ -1,3 +1,5 @@
+**NOTICE : VMware has ended active development of this project, this repository will no longer be updated.**
+
 .. image:: https://img.shields.io/pypi/dm/validation-app-engine
    :alt: PyPI - Downloads
 
